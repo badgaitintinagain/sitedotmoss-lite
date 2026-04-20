@@ -1,0 +1,5 @@
+node_modules/
+old_code/
+.env*
+package.json
+package-lock.json
