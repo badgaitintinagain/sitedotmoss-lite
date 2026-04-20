@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - site(.)moss</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"DM Sans"', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body 
+    class="font-sans text-stone-900 transition-all duration-700 relative min-h-screen" 
+    :class="[
+        isGrayscale ? 'grayscale' : '', 
+        theme === 'dark' ? 'dark bg-stone-900 text-stone-100' : 'bg-stone-50'
+    ]" 
+    :style="bgType === 'color' ? 'background-color: ' + bgValue : 'background-image: url(' + bgValue + '); background-size: cover; background-position: center; background-attachment: fixed;'"
+    x-data="appState()" 
+    x-init="setTimeout(() => lucide.createIcons(), 50)"
+>
+    <!-- Dark Mode / Image Overlay -->
+    <div x-show="bgType === 'image' || theme === 'dark'" class="absolute inset-0 z-[-1] transition-opacity duration-700" :class="theme === 'dark' ? 'bg-black/60' : 'bg-white/40'"></div>
+    
+    <!-- Navbar Component -->
+    <nav class="h-11 flex items-center justify-between lg:justify-center z-50 fixed bg-white/70 backdrop-blur-md top-0 left-0 border-b border-white/20 w-full shadow-sm" :class="theme === 'dark' ? 'bg-black/40 text-stone-200 border-white/10' : ''">
+        <div class="ml-4 lg:hidden"><img src="/favicon.ico" alt="Logo" class="w-5 h-5 object-contain" /></div>
+        <div class="hidden lg:flex mr-8 block"><img src="/favicon.ico" alt="Logo" class="w-5 h-5 object-contain" /></div>
+        <div class="hidden lg:flex space-x-8 text-xs tracking-wide text-gray-800">
+            <a href="../index.html" class="hover:text-black transition-colors" :class="theme === 'dark' ? 'text-stone-300 hover:text-white' : ''">Dashboard</a>
+            <a href="setting.html" class="hover:text-black transition-colors font-bold" :class="theme === 'dark' ? 'text-white' : ''">Settings</a>
+        </div>
+        <div class="mr-4 lg:mr-0 lg:absolute lg:right-8 flex space-x-5 items-center">
+            <a href="setting.html" class="hover:opacity-70 p-1 rounded" :class="theme === 'dark' ? 'bg-white/10 text-white' : 'bg-stone-100'">
+                <i data-lucide="settings" class="w-4 h-4"></i>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Settings Area (Full Page View) -->
+    <section class="min-h-[calc(100vh-2.75rem)] px-4 py-10 md:px-6 lg:py-12 flex items-center justify-center overflow-hidden">
+        <div class="w-full max-w-[1120px]">
+            <div class="grid gap-4 md:grid-cols-[230px_minmax(0,1fr)] h-[min(760px,calc(100vh-5rem))] overflow-hidden bg-white/60 backdrop-blur-xl border border-white/40 p-4 md:p-5 rounded-[28px] shadow-[0_20px_60px_rgba(0,0,0,0.05)]" :class="theme === 'dark' ? 'bg-black/40 border-white/10' : ''">
+            
+            <!-- Sidebar Navigation -->
+            <aside class="w-full md:w-[240px] flex-shrink-0 md:sticky md:top-4 self-start h-full overflow-hidden">
+                <div class="mb-4 rounded-[20px] border border-stone-200/50 bg-stone-100/50 p-4" :class="theme === 'dark' ? 'bg-white/5 border-white/10' : ''">
+                    <p class="text-[10px] uppercase tracking-[0.2em] text-stone-500 font-bold mb-1" :class="theme === 'dark' ? 'text-stone-400' : ''"><i data-lucide="zap" class="w-3 h-3 inline mr-1 -mt-0.5"></i> Settings</p>
+                    <p class="text-sm font-light text-stone-700" :class="theme === 'dark' ? 'text-stone-300' : ''">Choose a control family</p>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-1 gap-2 pb-2 md:pb-0">
+                    <template x-for="section in settingsSections" :key="section.id">
+                        <button 
+                            @click="activeSection = section.id"
+                            class="flex h-12 w-full items-center justify-start gap-3 px-4 rounded-2xl border transition-all text-xs font-medium whitespace-nowrap overflow-hidden"
+                            :class="theme === 'dark' 
+                                ? (activeSection === section.id ? 'border-white/20 bg-white/10 text-white shadow-sm' : 'border-transparent text-stone-400 hover:bg-white/5')
+                                : (activeSection === section.id ? 'border-stone-300 bg-white text-stone-900 shadow-sm' : 'border-transparent text-stone-500 hover:bg-stone-50/80')"
+                        >
+                            <i :data-lucide="section.icon" class="w-4 h-4" :class="activeSection === section.id ? (theme === 'dark' ? 'text-amber-400' : 'text-amber-600') : ''"></i>
+                            <span x-text="section.label"></span>
+                        </button>
+                    </template>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <div class="flex-1 min-w-0 space-y-4 h-full overflow-y-auto lg:pr-1">
+                
+                <!-- Interface Tab -->
+                <div x-show="activeSection === 'interface'" 
+                     x-transition:enter="transition ease-out duration-300 delay-100"
+                     x-transition:enter-start="opacity-0 translate-y-4"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="space-y-6">
+                    <div class="rounded-3xl border border-stone-200/60 bg-stone-50/50 p-4 lg:p-5" :class="theme === 'dark' ? 'bg-black/20 border-white/10' : ''">
+                        <div class="mb-4 flex items-center gap-2">
+                            <i data-lucide="sun" class="w-4 h-4 text-stone-400"></i>
+                            <h3 class="text-[10px] font-bold uppercase tracking-widest text-stone-500" :class="theme === 'dark' ? 'text-stone-400' : ''">Interface Mode</h3>
+                        </div>
+                        <div class="grid gap-3 md:grid-cols-2 mb-4">
+                            <div class="rounded-2xl border border-stone-200 bg-white/60 p-3" :class="theme === 'dark' ? 'bg-white/5 border-white/10' : ''">
+                                <p class="text-sm font-medium">Day / Night</p>
+                                <p class="mt-1 text-xs text-stone-500 leading-relaxed" :class="theme === 'dark' ? 'text-stone-400' : ''">Keep the UI in warm daylight or switch to a softer dusk mode.</p>
+                            </div>
+                            <div class="rounded-2xl border border-stone-200 bg-white/60 p-3 flex flex-col justify-center" :class="theme === 'dark' ? 'bg-white/5 border-white/10' : ''">
+                                <p class="text-[10px] uppercase tracking-[0.2em] text-stone-400 font-bold">Current Mood</p>
+                                <p class="mt-1 text-sm font-medium" x-text="theme === 'dark' ? 'Night Dusk' : 'Warm Daylight'"></p>
+                            </div>
+                        </div>
+                        <div class="flex gap-3">
+                            <button @click="theme = 'light'" class="flex-1 flex items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 transition" :class="theme === 'light' ? 'border-stone-300 bg-white text-stone-900 shadow-sm font-semibold' : 'border-stone-200/50 bg-stone-100/50 text-stone-500 hover:bg-stone-100/80'">
+                                <i data-lucide="sun" class="w-4 h-4" :class="theme === 'light' ? 'text-amber-500' : ''"></i> <span class="text-sm">Day</span>
+                            </button>
+                            <button @click="theme = 'dark'" class="flex-1 flex items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 transition" :class="theme === 'dark' ? 'border-white/20 bg-white/10 text-white shadow-sm font-semibold' : (theme === 'light' ? 'border-stone-200/50 bg-stone-100/50 text-stone-500 hover:bg-stone-100/80' : 'border-white/10 bg-white/5 text-stone-400 hover:bg-white/10')">
+                                <i data-lucide="moon" class="w-4 h-4" :class="theme === 'dark' ? 'text-indigo-400' : ''"></i> <span class="text-sm">Night</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Canvas Tab -->
+                <div x-show="activeSection === 'canvas'" 
+                     x-transition:enter="transition ease-out duration-300 delay-100"
+                     x-transition:enter-start="opacity-0 translate-y-4"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     style="display: none;"
+                     class="space-y-6">
+                    <div class="rounded-3xl border border-stone-200/60 bg-stone-50/50 p-4 lg:p-5" :class="theme === 'dark' ? 'bg-black/20 border-white/10' : ''">
+                        <div class="mb-4 flex items-center gap-2">
+                            <i data-lucide="image" class="w-4 h-4 text-stone-400"></i>
+                            <h3 class="text-[10px] font-bold uppercase tracking-widest text-stone-500" :class="theme === 'dark' ? 'text-stone-400' : ''">Canvas Type</h3>
+                        </div>
+                        <div class="flex p-1 bg-stone-200/50 rounded-xl mb-4" :class="theme === 'dark' ? 'bg-white/5' : ''">
+                            <button @click="bgType = 'color'" class="flex-1 py-2 text-xs font-semibold uppercase tracking-widest rounded-lg transition" :class="bgType === 'color' ? (theme === 'dark' ? 'bg-white/20 text-white shadow-sm' : 'bg-white shadow-sm text-stone-900') : 'text-stone-500'">Color</button>
+                            <button @click="bgType = 'image'" class="flex-1 py-2 text-xs font-semibold uppercase tracking-widest rounded-lg transition" :class="bgType === 'image' ? (theme === 'dark' ? 'bg-white/20 text-white shadow-sm' : 'bg-white shadow-sm text-stone-900') : 'text-stone-500'">Image</button>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <template x-for="bg in filteredPresets" :key="bg.id">
+                                <button @click="bgValue = bg.value" class="group relative aspect-square rounded-2xl border overflow-hidden transition" :class="bgValue === bg.value ? 'scale-[0.97] shadow-md ring-2 ring-stone-200 ' + (theme === 'dark' ? 'border-white/40 ring-white/20' : 'border-stone-400') : (theme === 'dark' ? 'border-white/10 hover:border-white/30' : 'border-stone-200 hover:border-stone-300')">
+                                    
+                                    <!-- Render Context -->
+                                    <template x-if="bg.type === 'color'">
+                                        <div class="w-full h-full" :style="'background-color: ' + bg.value"></div>
+                                    </template>
+                                    <template x-if="bg.type === 'image'">
+                                        <img :src="bg.value" class="w-full h-full object-cover">
+                                    </template>
+
+                                    <!-- Selected Overlay -->
+                                    <div x-show="bgValue === bg.value" class="absolute inset-0 bg-black/10 flex items-center justify-center">
+                                        <i data-lucide="check" class="w-6 h-6 text-white drop-shadow"></i>
+                                    </div>
+                                    
+                                    <!-- Info Bar -->
+                                    <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2 text-left text-[9px] text-white uppercase tracking-widest flex flex-col justify-end min-h-[50%]">
+                                        <span x-text="bg.name" class="font-bold"></span>
+                                        <span x-text="bg.hint" class="opacity-80 text-[8px]"></span>
+                                    </div>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tones Tab -->
+                <div x-show="activeSection === 'tones'"
+                     x-transition:enter="transition ease-out duration-300 delay-100"
+                     x-transition:enter-start="opacity-0 translate-y-4"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     style="display: none;" 
+                     class="space-y-6">
+                    <div class="rounded-3xl border border-stone-200/60 bg-stone-50/50 p-4 lg:p-5" :class="theme === 'dark' ? 'bg-black/20 border-white/10' : ''">
+                        <div class="mb-4 flex items-center gap-2">
+                            <i data-lucide="palette" class="w-4 h-4 text-stone-400"></i>
+                            <h3 class="text-[10px] font-bold uppercase tracking-widest text-stone-500" :class="theme === 'dark' ? 'text-stone-400' : ''">Palette Library</h3>
+                        </div>
+                        <p class="mb-4 text-xs font-light text-stone-500" :class="theme === 'dark' ? 'text-stone-400' : ''">Pick a tone palette for the dashboard tiles, or let the page derive one from the current canvas background.</p>
+                        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-5">
+                            <div class="text-[10px] uppercase tracking-[0.2em] text-stone-400 font-bold" :class="theme === 'dark' ? 'text-stone-500' : ''" x-text="tonePaletteLabel"></div>
+                            <button @click="autoAdjustTonePalette()" class="inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-xs font-semibold uppercase tracking-widest transition" :class="theme === 'dark' ? 'border-white/10 bg-white/5 text-stone-200 hover:bg-white/10' : 'border-stone-200 bg-white/70 text-stone-700 hover:bg-white shadow-sm'">
+                                <i data-lucide="wand-sparkles" class="w-4 h-4"></i>
+                                Auto adjust from canvas
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 lg:grid-cols-3">
+                            <template x-for="palette in tonePalettes" :key="palette.id">
+                                <button @click="applyTonePalette(palette)" class="p-3 rounded-2xl border text-left transition" :class="tonePaletteId === palette.id ? 'scale-[0.99] shadow-md ' + (theme === 'dark' ? 'border-white/30 ring-1 ring-white/15 bg-white/8' : 'border-stone-400 bg-white') : (theme === 'dark' ? 'border-white/10 bg-white/5 hover:bg-white/10' : 'border-stone-200 bg-white/60 hover:bg-white')">
+                                    <div class="flex gap-1.5 mb-3">
+                                        <template x-for="color in palette.colors" :key="color">
+                                            <div class="h-11 flex-1 rounded-xl border border-black/5 shadow-inner" :style="'background-color: ' + color"></div>
+                                        </template>
+                                    </div>
+                                    <div class="flex justify-between items-end">
+                                        <div>
+                                            <div x-text="palette.name" class="text-xs font-semibold"></div>
+                                            <div x-text="palette.note" class="text-[8px] uppercase tracking-widest mt-0.5" :class="theme === 'dark' ? 'text-stone-500' : 'text-stone-400'"></div>
+                                        </div>
+                                        <i x-show="tonePaletteId === palette.id" data-lucide="check" class="w-3 h-3 text-amber-600"></i>
+                                    </div>
+                                </button>
+                            </template>
+                        </div>
+                        <div class="mt-4 rounded-2xl border border-stone-200/60 bg-white/50 p-4" :class="theme === 'dark' ? 'bg-white/5 border-white/10' : ''">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="text-[10px] uppercase tracking-[0.2em] text-stone-400 font-bold" :class="theme === 'dark' ? 'text-stone-500' : ''">Current palette</div>
+                                <div class="text-[10px] font-mono text-stone-400" x-text="tonePalette.length + ' swatches'"></div>
+                            </div>
+                            <div class="flex gap-2">
+                                <template x-for="color in tonePalette" :key="color">
+                                    <div class="h-10 flex-1 rounded-xl border border-black/5 shadow-inner" :style="'background-color: ' + color"></div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="rounded-3xl border border-stone-200/60 bg-white/50 p-4 lg:p-5" :class="theme === 'dark' ? 'bg-black/20 border-white/10' : ''">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="wind" class="w-4 h-4 text-stone-400"></i>
+                                <h3 class="text-[10px] font-bold uppercase tracking-widest text-stone-500" :class="theme === 'dark' ? 'text-stone-400' : ''">Glass Intensity</h3>
+                            </div>
+                            <span class="text-xs font-mono text-stone-400" x-text="glassBlur + 'px'"></span>
+                        </div>
+                        <input type="range" min="0" max="40" x-model="glassBlur" class="w-full h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-amber-600" :class="theme === 'dark' ? 'bg-white/20' : ''">
+                    </div>
+                </div>
+
+                <!-- Accessibility Tab -->
+                <div x-show="activeSection === 'accessibility'"
+                     x-transition:enter="transition ease-out duration-300 delay-100"
+                     x-transition:enter-start="opacity-0 translate-y-4"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     style="display: none;" 
+                     class="space-y-6">
+                    <div class="rounded-3xl border border-stone-200/60 bg-stone-50/50 p-4 lg:p-5" :class="theme === 'dark' ? 'bg-black/20 border-white/10' : ''">
+                        <div class="mb-4 flex items-center gap-2">
+                            <i data-lucide="ghost" class="w-4 h-4 text-stone-400"></i>
+                            <h3 class="text-[10px] font-bold uppercase tracking-widest text-stone-500" :class="theme === 'dark' ? 'text-stone-400' : ''">Accessibility</h3>
+                        </div>
+                        <button @click="isGrayscale = !isGrayscale" class="w-full flex items-center justify-between p-4 rounded-2xl border transition" :class="isGrayscale ? (theme === 'dark' ? 'bg-white/20 border-white/30' : 'bg-stone-200 border-stone-300') : (theme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-white border-stone-200')">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="ghost" class="w-5 h-5" :class="isGrayscale ? 'text-stone-800' : 'text-stone-400'" :class="theme === 'dark' && isGrayscale ? 'text-white' : ''"></i>
+                                <span class="text-sm font-medium">Force to Grayscale</span>
+                            </div>
+                            <div class="relative w-11 h-6 rounded-full transition" :class="isGrayscale ? (theme === 'dark' ? 'bg-white' : 'bg-stone-800') : (theme === 'dark' ? 'bg-white/20' : 'bg-stone-300')">
+                                <div class="absolute top-1 w-4 h-4 bg-white rounded-full transition-all" :class="isGrayscale ? 'left-6 bg-stone-100' : 'left-1'"></div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="mt-8 text-center text-[10px] uppercase tracking-widest font-bold text-stone-400">
+                site(.)moss Settings · Refined by Copilot
+            </div>
+        </div>
+    </section>
+
+    <!-- Shared State Controller (Using LocalStorage so settings apply globally) -->
+    <script>
+        const defaultTonePalettes = [
+            { id: 'paper', name: 'Paper Drift', note: 'soft neutral', colors: ['#F2EBE3', '#E5D9C9', '#D7C2A9', '#C6A98C', '#A98267'] },
+            { id: 'sage', name: 'Sage Field', note: 'earth calm', colors: ['#EEF1E6', '#D7E0C8', '#B7C3A1', '#879B74', '#5E6F52'] },
+            { id: 'clay', name: 'Clay Dust', note: 'warm clay', colors: ['#F7E7DD', '#EBC9B7', '#DFA58E', '#C98B6E', '#955E4A'] },
+            { id: 'dusk', name: 'Dusk Glass', note: 'cool dusk', colors: ['#F2F4F8', '#D8DDE8', '#AAB6CC', '#7888A8', '#4E5A78'] },
+            { id: 'moss', name: 'Moss Slate', note: 'muted forest', colors: ['#E7EEE7', '#C6D0C0', '#9EAE93', '#6F8262', '#46553D'] },
+            { id: 'blush', name: 'Blush Sand', note: 'gentle pastel', colors: ['#F8E9E7', '#F0D1CC', '#E8B8B4', '#D6928D', '#B86E69'] }
+        ];
+
+        function clamp(value, min, max) {
+            return Math.min(max, Math.max(min, value));
+        }
+
+        function hexToRgb(hex) {
+            const cleanHex = hex.replace('#', '').trim();
+            if (cleanHex.length !== 6) return null;
+
+            const red = parseInt(cleanHex.slice(0, 2), 16);
+            const green = parseInt(cleanHex.slice(2, 4), 16);
+            const blue = parseInt(cleanHex.slice(4, 6), 16);
+            return Number.isNaN(red) || Number.isNaN(green) || Number.isNaN(blue) ? null : { red, green, blue };
+        }
+
+        function rgbToHex(red, green, blue) {
+            return '#' + [red, green, blue]
+                .map(value => clamp(Math.round(value), 0, 255).toString(16).padStart(2, '0'))
+                .join('');
+        }
+
+        function rgbToHsl(red, green, blue) {
+            red /= 255;
+            green /= 255;
+            blue /= 255;
+
+            const max = Math.max(red, green, blue);
+            const min = Math.min(red, green, blue);
+            let hue = 0;
+            let saturation = 0;
+            const lightness = (max + min) / 2;
+            const delta = max - min;
+
+            if (delta !== 0) {
+                saturation = lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+
+                switch (max) {
+                    case red:
+                        hue = ((green - blue) / delta + (green < blue ? 6 : 0));
+                        break;
+                    case green:
+                        hue = ((blue - red) / delta + 2);
+                        break;
+                    default:
+                        hue = ((red - green) / delta + 4);
+                        break;
+                }
+
+                hue *= 60;
+            }
+
+            return { hue, saturation, lightness };
+        }
+
+        function hslToRgb(hue, saturation, lightness) {
+            const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+            const segment = hue / 60;
+            const secondary = chroma * (1 - Math.abs((segment % 2) - 1));
+            let red = 0;
+            let green = 0;
+            let blue = 0;
+
+            if (segment >= 0 && segment < 1) {
+                red = chroma;
+                green = secondary;
+            } else if (segment < 2) {
+                red = secondary;
+                green = chroma;
+            } else if (segment < 3) {
+                green = chroma;
+                blue = secondary;
+            } else if (segment < 4) {
+                green = secondary;
+                blue = chroma;
+            } else if (segment < 5) {
+                red = secondary;
+                blue = chroma;
+            } else {
+                red = chroma;
+                blue = secondary;
+            }
+
+            const match = lightness - chroma / 2;
+            return {
+                red: (red + match) * 255,
+                green: (green + match) * 255,
+                blue: (blue + match) * 255
+            };
+        }
+
+        function parseTonePalette(value) {
+            try {
+                const parsed = JSON.parse(value || '[]');
+                return Array.isArray(parsed) ? parsed.filter(color => typeof color === 'string' && color.startsWith('#')) : [];
+            } catch {
+                return [];
+            }
+        }
+
+        function findTonePaletteById(paletteId) {
+            return defaultTonePalettes.find(palette => palette.id === paletteId) || defaultTonePalettes[0];
+        }
+
+        function deriveTonePaletteFromHex(hexValue) {
+            const rgb = hexToRgb(hexValue) || hexToRgb('#D8C1A0');
+            const hsl = rgbToHsl(rgb.red, rgb.green, rgb.blue);
+            const hueShift = hsl.saturation < 0.12 ? 0 : 10;
+            const saturationBoost = hsl.saturation < 0.15 ? 0.10 : 0.06;
+            const toneLevels = [0.94, 0.84, 0.72, 0.58, 0.44];
+
+            return toneLevels.map((lightness, index) => {
+                const hue = (hsl.hue + hueShift + (index * 4)) % 360;
+                const saturation = clamp(hsl.saturation + saturationBoost - index * 0.02, 0.08, 0.45);
+                const rgbColor = hslToRgb(hue, saturation, clamp(lightness, 0.12, 0.92));
+                return rgbToHex(rgbColor.red, rgbColor.green, rgbColor.blue);
+            });
+        }
+
+        async function deriveTonePaletteFromImage(imageUrl) {
+            return await new Promise(resolve => {
+                const image = new Image();
+                image.crossOrigin = 'anonymous';
+                image.onload = () => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 32;
+                        canvas.height = 32;
+                        const context = canvas.getContext('2d', { willReadFrequently: true });
+                        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+                        const imageData = context.getImageData(0, 0, canvas.width, canvas.height).data;
+                        let red = 0;
+                        let green = 0;
+                        let blue = 0;
+
+                        for (let index = 0; index < imageData.length; index += 4) {
+                            red += imageData[index];
+                            green += imageData[index + 1];
+                            blue += imageData[index + 2];
+                        }
+
+                        const pixelCount = imageData.length / 4;
+                        resolve(deriveTonePaletteFromHex(rgbToHex(red / pixelCount, green / pixelCount, blue / pixelCount)));
+                    } catch {
+                        resolve(deriveTonePaletteFromHex('#D8C1A0'));
+                    }
+                };
+                image.onerror = () => resolve(deriveTonePaletteFromHex('#D8C1A0'));
+                image.src = imageUrl;
+            });
+        }
+
+        function appState() {
+            return {
+                activeSection: 'interface',
+                
+                // Get State from LocalStorage or default
+                theme: localStorage.getItem('siteMoss_theme') || 'light',
+                bgType: localStorage.getItem('siteMoss_bgType') || 'color',
+                bgValue: localStorage.getItem('siteMoss_bgValue') || '#F2EBE3',
+                glassBlur: parseInt(localStorage.getItem('siteMoss_glassBlur')) || 10,
+                isGrayscale: localStorage.getItem('siteMoss_isGrayscale') === 'true',
+                tonePaletteId: localStorage.getItem('siteMoss_tonePaletteId') || 'paper',
+                tonePalette: parseTonePalette(localStorage.getItem('siteMoss_tonePalette')).length
+                    ? parseTonePalette(localStorage.getItem('siteMoss_tonePalette'))
+                    : findTonePaletteById(localStorage.getItem('siteMoss_tonePaletteId') || 'paper').colors,
+                
+                // Static Data
+                settingsSections: [
+                    { id: 'interface', label: 'Interface', icon: 'sun' },
+                    { id: 'canvas', label: 'Canvas', icon: 'image' },
+                    { id: 'tones', label: 'Tones', icon: 'palette' },
+                    { id: 'accessibility', label: 'Accessibility', icon: 'ghost' }
+                ],
+                sourcePresets: [
+                    { id: 'beige', type: 'color', value: '#F2EBE3', name: 'Warm Paper', hint: 'soft neutral' },
+                    { id: 'charcoal', type: 'color', value: '#1A1A1A', name: 'Deep Bark', hint: 'night ground' },
+                    { id: 'nature', type: 'image', value: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&w=1600&q=80', name: 'Nature', hint: 'green wash' },
+                    { id: 'abstract', type: 'image', value: 'https://images.unsplash.com/photo-1557683311-eac922347aa1?auto=format&fit=crop&w=1600&q=80', name: 'Abstract', hint: 'soft motion' },
+                    { id: 'city', type: 'image', value: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1600&q=80', name: 'City', hint: 'cool dusk' }
+                ],
+                tonePalettes: defaultTonePalettes,
+                get tonePaletteLabel() {
+                    const activePalette = this.tonePalettes.find(palette => palette.id === this.tonePaletteId);
+                    return activePalette ? `${activePalette.name} · ${activePalette.note}` : 'Custom palette';
+                },
+                get filteredPresets() {
+                    return this.sourcePresets.filter(p => p.type === this.bgType);
+                },
+
+                applyTonePalette(palette) {
+                    this.tonePaletteId = palette.id;
+                    this.tonePalette = palette.colors.slice();
+                },
+
+                async autoAdjustTonePalette() {
+                    const sourceColor = this.bgType === 'color'
+                        ? this.bgValue
+                        : await deriveTonePaletteFromImage(this.bgValue);
+
+                    const palette = Array.isArray(sourceColor) ? sourceColor : deriveTonePaletteFromHex(sourceColor);
+                    this.tonePaletteId = 'auto';
+                    this.tonePalette = palette;
+                },
+
+                init() {
+                    // Watch for changes and save to local storage
+                    this.$watch('theme', val => localStorage.setItem('siteMoss_theme', val));
+                    this.$watch('bgType', val => localStorage.setItem('siteMoss_bgType', val));
+                    this.$watch('bgValue', val => localStorage.setItem('siteMoss_bgValue', val));
+                    this.$watch('glassBlur', val => localStorage.setItem('siteMoss_glassBlur', val));
+                    this.$watch('isGrayscale', val => localStorage.setItem('siteMoss_isGrayscale', val));
+                    this.$watch('tonePaletteId', val => localStorage.setItem('siteMoss_tonePaletteId', val));
+                    this.$watch('tonePalette', val => localStorage.setItem('siteMoss_tonePalette', JSON.stringify(val)));
+
+                    // Listen to updates from other tabs
+                    window.addEventListener('storage', (e) => {
+                        if (e.key === 'siteMoss_theme') this.theme = e.newValue;
+                        if (e.key === 'siteMoss_bgType') this.bgType = e.newValue;
+                        if (e.key === 'siteMoss_bgValue') this.bgValue = e.newValue;
+                        if (e.key === 'siteMoss_isGrayscale') this.isGrayscale = e.newValue === 'true';
+                        if (e.key === 'siteMoss_tonePaletteId') this.tonePaletteId = e.newValue || 'paper';
+                        if (e.key === 'siteMoss_tonePalette') this.tonePalette = parseTonePalette(e.newValue) || this.tonePalette;
+                    });
+
+                    this.$watch('activeSection', () => { setTimeout(() => lucide.createIcons(), 10) });
+                }
+            }
+        }
+    </script>
+</body>
+</html>

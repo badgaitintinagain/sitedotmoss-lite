@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>site(.)moss</title>
+    <!-- Google Fonts: DM Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS (CDN for prototyping) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"DM Sans"', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    
+    <!-- CSS Template สำหรับ Tile ทุกขนาด ลดความซับซ้อนด้วย @apply -->
+    <style type="text/tailwindcss">
+        @keyframes tilePop {
+            0% { opacity: 0; transform: scale(0.85) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @layer components {
+            .tile {
+                @apply relative bg-white rounded-none border border-gray-200 shadow-sm hover:shadow-2xl hover:border-gray-400 hover:z-30 overflow-hidden flex items-center justify-center cursor-pointer;
+                transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+                animation: tilePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+            }
+            .dark .tile {
+                border-color: rgba(255, 255, 255, 0.1);
+                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+            }
+            .tile:hover {
+                transform: scale(1.05) translateY(-4px);
+            }
+            .tile-title {
+                @apply absolute bottom-1.5 left-2 text-[9px] font-bold uppercase tracking-wider text-stone-700 z-20 bg-white/95 px-1 rounded-sm transition-opacity duration-300 shadow-sm;
+            }
+            .dark .tile-title {
+                background-color: rgba(0, 0, 0, 0.78);
+                color: rgb(250, 250, 249);
+            }
+            .tile-live {
+                @apply relative z-10 flex w-full h-full p-2 flex-col justify-center items-center text-center transition-transform duration-500;
+            }
+            .tile-live svg {
+                width: 1.25rem !important;
+                height: 1.25rem !important;
+                flex-shrink: 0;
+            }
+            .dark .tile-live {
+                color: rgba(250, 250, 249, 0.96);
+            }
+            .tile:hover .tile-live {
+                transform: scale(1.02);
+            }
+        }
+    </style>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body 
+    class="font-sans text-stone-900 transition-all duration-700 relative min-h-screen" 
+    :class="[
+        isGrayscale ? 'grayscale' : '', 
+        theme === 'dark' ? 'dark bg-stone-950 text-stone-50' : 'bg-stone-50'
+    ]" 
+    :style="bgType === 'color' ? 'background-color: ' + bgValue : 'background-image: url(' + bgValue + '); background-size: cover; background-position: center; background-attachment: fixed;'"
+    x-data="appState()" 
+    x-init="setTimeout(() => lucide.createIcons(), 50)"
+>
+    <!-- Dark Mode / Image Overlay -->
+    <div x-show="bgType === 'image' || theme === 'dark'" class="absolute inset-0 z-[-1] transition-opacity duration-700" :class="theme === 'dark' ? 'bg-black/75' : 'bg-white/40'"></div>
+    
+    <!-- Navbar Component -->
+    <nav class="h-11 flex items-center justify-between lg:justify-center z-50 fixed bg-white/70 backdrop-blur-md top-0 left-0 border-b border-white/20 w-full shadow-sm" :class="theme === 'dark' ? 'bg-black/55 text-stone-100 border-white/10 shadow-black/10' : ''">
+        <div class="ml-4 lg:hidden"><img src="/favicon.ico" alt="Logo" class="w-5 h-5 object-contain" /></div>
+        <div class="hidden lg:flex mr-8 block"><img src="/favicon.ico" alt="Logo" class="w-5 h-5 object-contain" /></div>
+        <div class="hidden lg:flex space-x-8 text-xs tracking-wide text-gray-800">
+            <a href="index.html" class="font-bold transition-colors" :class="theme === 'dark' ? 'text-white' : 'text-black'">Dashboard</a>
+            <a href="pages/setting.html" class="transition-colors hover:text-black" :class="theme === 'dark' ? 'text-stone-300 hover:text-white' : 'text-gray-800'">Settings</a>
+        </div>
+        <div class="relative mr-4 lg:mr-0 lg:absolute lg:right-8 flex items-center" x-data="{ open: false }" @click.outside="open = false">
+            <button @click="open = !open" class="flex h-8 w-8 items-center justify-center rounded-full transition hover:opacity-90" :class="theme === 'dark' ? 'bg-white/10 text-white' : 'bg-stone-100 text-stone-800'" aria-label="Quick settings">
+                <i data-lucide="settings" class="w-4 h-4"></i>
+            </button>
+            <div x-show="open" x-transition class="absolute right-0 top-10 w-72 overflow-hidden rounded-2xl border shadow-[0_20px_50px_rgba(0,0,0,0.18)]" :class="theme === 'dark' ? 'border-white/10 bg-stone-950/95 text-stone-100' : 'border-stone-200 bg-white text-stone-800'" style="display: none;">
+                <div class="border-b px-4 py-3" :class="theme === 'dark' ? 'border-white/10' : 'border-stone-100'">
+                    <div class="text-[10px] uppercase tracking-[0.24em] font-bold text-stone-400">Quick Settings</div>
+                    <div class="mt-1 text-xs" :class="theme === 'dark' ? 'text-stone-300' : 'text-stone-500'">Frequent toggles for the dashboard</div>
+                </div>
+                <div class="p-2 space-y-1">
+                    <button @click="theme = theme === 'dark' ? 'light' : 'dark'; open = false" class="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition" :class="theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-stone-100'">
+                        <span>Theme</span>
+                        <span class="text-[11px] uppercase tracking-widest" x-text="theme === 'dark' ? 'Dark' : 'Light'"></span>
+                    </button>
+                    <button @click="bgType = bgType === 'color' ? 'image' : 'color'; open = false" class="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition" :class="theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-stone-100'">
+                        <span>Canvas type</span>
+                        <span class="text-[11px] uppercase tracking-widest" x-text="bgType"></span>
+                    </button>
+                    <button @click="isGrayscale = !isGrayscale; open = false" class="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition" :class="theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-stone-100'">
+                        <span>Grayscale</span>
+                        <span class="text-[11px] uppercase tracking-widest" x-text="isGrayscale ? 'On' : 'Off'"></span>
+                    </button>
+                    <button @click="bgType = 'color'; bgValue = '#F2EBE3'; localStorage.removeItem('siteMoss_tonePalette'); localStorage.removeItem('siteMoss_tonePaletteId'); open = false; window.dispatchEvent(new CustomEvent('siteMossPaletteChanged'))" class="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition" :class="theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-stone-100'">
+                        <span>Reset palette</span>
+                        <span class="text-[11px] uppercase tracking-widest">Paper</span>
+                    </button>
+                    <a href="pages/setting.html" @click="open = false" class="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm transition" :class="theme === 'dark' ? 'hover:bg-white/10 text-stone-100' : 'hover:bg-stone-100 text-stone-800'">
+                        <span>Open settings</span>
+                        <i data-lucide="external-link" class="w-4 h-4"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div x-data="dashboardData()">
+        <!-- Main Content Area (Dashboard view) -->
+        <main class="pt-28 md:pt-32 px-6 md:px-12 w-full mx-auto min-h-[min(100vh,950px)] pb-12 transition duration-300 md:flex md:items-center overflow-x-hidden md:overflow-x-auto md:overflow-y-hidden cursor-grab active:cursor-grabbing [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" 
+              :class="launcherOpen ? 'blur-[10px] scale-[0.985] pointer-events-none select-none' : ''"
+              x-ref="scrollContainer"
+              @mousedown="isDown = true; startX = $event.pageX - $refs.scrollContainer.offsetLeft; scrollLeft = $refs.scrollContainer.scrollLeft"
+              @mouseleave="isDown = false"
+              @mouseup="isDown = false"
+              @mousemove="if(!isDown) return; $event.preventDefault(); const x = $event.pageX - $refs.scrollContainer.offsetLeft; const walk = (x - startX) * 1.5; $refs.scrollContainer.scrollLeft = scrollLeft - walk">
+        
+        <!-- 
+          CSS Grid แบบ Friv/Pinterest Style สำหรับมือถือ (แนวตั้ง) 
+          และแนวนอน (Horizontal Scroll) สำหรับ Desktop/Tablet
+        -->
+        <div class="grid justify-center md:justify-start gap-3 grid-flow-dense grid-cols-[repeat(auto-fit,minmax(5.5rem,5.5rem))] md:grid-cols-[none] auto-rows-[5.5rem] md:grid-rows-[repeat(5,5.5rem)] md:grid-flow-col md:auto-cols-[5.5rem] w-full md:w-max min-h-[min-content] pointer-events-auto">
+            
+            <!-- 
+                นี่คือ Tile Template ของจริงที่ใช้โครงสร้างจาก Alpine.js
+
+                แค่แก้ข้อมูลใน Script ด้านล่าง ก็จะได้กล่องใหม่ทันที หมดปัญหาโค้ด HTML รกๆ
+            -->
+            <template x-for="(tile, index) in tiles" :key="tile.id">
+                <div :id="'tile-' + tile.id" :class="['tile', tile.size]" :style="tileBackground(tile, index) + '; animation-delay: ' + (index * 45) + 'ms;'">
+                    
+                    <!-- เนื้อหาภายใน Tile -->
+                    <div class="tile-live" x-html="tile.html"></div>
+                    
+                    <!-- ชื่อไทล์ -->
+                    <span x-show="tile.title && tile.size !== 'col-span-1 row-span-1' && tile.size !== 'col-span-1 row-span-2'" class="tile-title" x-text="tile.title"></span>
+                    
+                </div>
+            </template>
+
+        </main>
+        
+        <div class="fixed bottom-4 right-4 z-50">
+            <button @click="launcherOpen = !launcherOpen" class="flex h-12 w-12 items-center justify-center rounded-full border shadow-[0_16px_40px_rgba(0,0,0,0.18)] transition hover:scale-105" :class="theme === 'dark' ? 'border-white/10 bg-stone-950/95 text-white' : 'border-stone-200 bg-white text-stone-800'" aria-label="Open tile launcher">
+                <i data-lucide="arrow-up" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div x-show="launcherOpen" x-transition class="fixed inset-0 z-40 bg-black/5 backdrop-blur-xl" @click="launcherOpen = false" style="display: none;"></div>
+
+        <section x-show="launcherOpen" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 pointer-events-none" style="display: none;">
+            <div class="flex h-full w-full max-w-5xl pointer-events-auto" @click.outside="launcherOpen = false">
+                
+                <!-- Left panel: A-Z grid filter (hidden on mobile, visible on desktop) -->
+                <div class="hidden md:flex w-1/2 flex-col justify-center pr-12 lg:pr-24">
+                    <div class="grid grid-cols-5 gap-y-10 gap-x-2 text-center">
+                        <template x-for="letter in ['&','#','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','🌐']">
+                            <button class="text-3xl font-light transition-transform hover:scale-125"
+                                    :class="theme === 'dark' ? 'text-white/60 hover:text-white' : 'text-stone-600 hover:text-stone-900'"
+                                    x-text="letter.toUpperCase()"></button>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Right panel: Search and list -->
+                <div class="flex min-w-0 flex-1 flex-col py-6 md:py-10 w-full md:w-1/2">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="md:hidden">
+                            <div class="text-3xl font-light" :class="theme === 'dark' ? 'text-white' : 'text-stone-900'">All tiles</div>
+                        </div>
+                        <button @click="launcherOpen = false" class="md:hidden flex h-10 w-10 items-center justify-center rounded-full transition" :class="theme === 'dark' ? 'bg-white/10 text-white' : 'bg-stone-200 text-stone-800'">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <div>
+                        <label class="flex items-center gap-3 rounded-xl border px-4 py-3 text-sm shadow-sm transition" :class="theme === 'dark' ? 'border-white/10 bg-stone-900/50 text-stone-100 backdrop-blur-md focus-within:bg-stone-900/80 focus-within:border-white/30' : 'border-stone-200 bg-white/60 text-stone-700 backdrop-blur-md focus-within:bg-white/90 focus-within:border-stone-400'">
+                            <i data-lucide="search" class="w-4 h-4 opacity-70"></i>
+                            <input x-model="launcherQuery" type="search" placeholder="Search apps" class="w-full bg-transparent outline-none placeholder:opacity-50" />
+                        </label>
+                    </div>
+
+                    <div class="min-h-0 flex-1 overflow-y-auto mt-6 pr-2 lg:pr-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <template x-for="section in getLauncherSections()" :key="section.letter">
+                            <div class="mb-6">
+                                <div class="px-2 pb-2 text-xl font-light" :class="theme === 'dark' ? 'text-white/50' : 'text-stone-400'" x-text="section.letter"></div>
+                                <div class="space-y-1">
+                                    <template x-for="tile in section.tiles" :key="tile.id">
+                                        <button @click="scrollToTile(tile.id)" class="flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm transition" :class="theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/5'">
+                                            <div class="flex items-center gap-4">
+                                                <div class="flex h-10 w-10 items-center justify-center rounded-xl" :class="theme === 'dark' ? 'bg-white/5' : 'bg-white shadow-sm border border-stone-100'">
+                                                    <i data-lucide="circle" class="w-5 h-5 opacity-40"></i>
+                                                </div>
+                                                <span class="text-base" :class="theme === 'dark' ? 'text-stone-100' : 'text-stone-800'" x-text="tile.title"></span>
+                                            </div>
+                                            <i data-lucide="chevron-right" class="w-4 h-4 opacity-30"></i>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Shared State Controller (Using LocalStorage so settings apply globally) -->
+    <script>
+        function getStoredTonePalette() {
+            const storedPalette = localStorage.getItem('siteMoss_tonePalette');
+
+            if (storedPalette) {
+                try {
+                    const parsedPalette = JSON.parse(storedPalette);
+                    if (Array.isArray(parsedPalette) && parsedPalette.length) {
+                        return parsedPalette;
+                    }
+                } catch {
+                    // Fall through to the default palette map.
+                }
+            }
+
+            const paletteId = localStorage.getItem('siteMoss_tonePaletteId') || 'paper';
+            const fallbackPalettes = {
+                paper: ['#F2EBE3', '#E5D9C9', '#D7C2A9', '#C6A98C', '#A98267'],
+                sage: ['#EEF1E6', '#D7E0C8', '#B7C3A1', '#879B74', '#5E6F52'],
+                clay: ['#F7E7DD', '#EBC9B7', '#DFA58E', '#C98B6E', '#955E4A'],
+                dusk: ['#F2F4F8', '#D8DDE8', '#AAB6CC', '#7888A8', '#4E5A78'],
+                moss: ['#E7EEE7', '#C6D0C0', '#9EAE93', '#6F8262', '#46553D'],
+                blush: ['#F8E9E7', '#F0D1CC', '#E8B8B4', '#D6928D', '#B86E69']
+            };
+
+            return fallbackPalettes[paletteId] || fallbackPalettes.paper;
+        }
+
+        function appState() {
+            return {
+                // Get State from LocalStorage or default
+                theme: localStorage.getItem('siteMoss_theme') || 'light',
+                bgType: localStorage.getItem('siteMoss_bgType') || 'color',
+                bgValue: localStorage.getItem('siteMoss_bgValue') || '#F2EBE3',
+                glassBlur: parseInt(localStorage.getItem('siteMoss_glassBlur')) || 10,
+                isGrayscale: localStorage.getItem('siteMoss_isGrayscale') === 'true',
+
+                init() {
+                    // Listen to updates from other tabs/pages
+                    window.addEventListener('storage', (e) => {
+                        if (e.key === 'siteMoss_theme') this.theme = e.newValue;
+                        if (e.key === 'siteMoss_bgType') this.bgType = e.newValue;
+                        if (e.key === 'siteMoss_bgValue') this.bgValue = e.newValue;
+                        if (e.key === 'siteMoss_isGrayscale') this.isGrayscale = e.newValue === 'true';
+                        if (e.key === 'siteMoss_glassBlur') this.glassBlur = parseInt(e.newValue);
+                    });
+                }
+            }
+        }
+
+        function dashboardData() {
+            const tonePalette = getStoredTonePalette();
+
+            const weatherImages = [
+                'https://images.unsplash.com/photo-1501973801540-537f08ccae7b?auto=format&fit=crop&w=1200&q=80',
+                'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80',
+                'https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?auto=format&fit=crop&w=1200&q=80',
+                'https://images.unsplash.com/photo-1425315283415-b3b42e162f5d?auto=format&fit=crop&w=1200&q=80'
+            ];
+
+            return {
+                isDown: false,
+                startX: 0,
+                scrollLeft: 0,
+                tonePalette,
+                launcherOpen: false,
+                launcherQuery: '',
+                weatherTemperature: '--',
+                weatherCondition: 'Loading weather...',
+                airQualityValue: '--',
+                airQualityLabel: 'Loading air quality...',
+                airQualityBadgeClass: 'bg-stone-200 text-stone-700',
+                airQualityImage: 'https://images.unsplash.com/photo-1516245834210-c4c142787335?auto=format&fit=crop&w=1200&q=80',
+                weatherBackground: weatherImages[Math.floor(Math.random() * weatherImages.length)],
+
+                tileBackground(tile, index) {
+                    if (tile.bgImage) {
+                        return tile.bgImage;
+                    }
+
+                    return 'background-color: ' + (this.tonePalette[index % this.tonePalette.length] || tile.bgColor);
+                },
+
+                getAirQualityColor() {
+                    const aqi = Number(this.airQualityValue);
+
+                    if (!Number.isFinite(aqi)) {
+                        return '#4A5D23';
+                    }
+
+                    if (aqi <= 50) return '#6F8262';
+                    if (aqi <= 100) return '#C6A98C';
+                    if (aqi <= 150) return '#C98B6E';
+                    return '#955E4A';
+                },
+
+                getAirQualityMeta(aqiValue) {
+                    const aqi = Number(aqiValue);
+
+                    if (!Number.isFinite(aqi)) {
+                        return {
+                            label: 'AQI Good',
+                            badgeClass: 'bg-emerald-500/85 text-white',
+                            image: 'https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=1200',
+                            tint: 'from-emerald-900/65 to-emerald-700/20'
+                        };
+                    }
+
+                    if (aqi <= 50) {
+                        return {
+                            label: 'AQI Good',
+                            badgeClass: 'bg-emerald-500/85 text-white',
+                            image: 'https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=1200',
+                            tint: 'from-emerald-900/65 to-emerald-700/20'
+                        };
+                    }
+
+                    if (aqi <= 100) {
+                        return {
+                            label: 'AQI Moderate',
+                            badgeClass: 'bg-amber-500/85 text-white',
+                            image: 'https://images.unsplash.com/photo-1472145246862-b24cf25c4a36?auto=format&fit=crop&w=1200&q=80',
+                            tint: 'from-amber-900/65 to-amber-700/20'
+                        };
+                    }
+
+                    return {
+                        label: 'AQI Poor',
+                        badgeClass: 'bg-rose-500/85 text-white',
+                        image: 'https://images.unsplash.com/photo-1470214304380-aadaedcfff9d?auto=format&fit=crop&w=1200&q=80',
+                        tint: 'from-rose-900/65 to-rose-700/20'
+                    };
+                },
+
+                sortTilesAlphabetically() {
+                    return this.tiles
+                        .filter(tile => tile.title)
+                        .slice()
+                        .sort((left, right) => left.title.localeCompare(right.title));
+                },
+
+                getLauncherSections() {
+                    const query = this.launcherQuery.trim().toLowerCase();
+                    const items = this.sortTilesAlphabetically().filter(tile => {
+                        if (!query) {
+                            return true;
+                        }
+
+                        return tile.title.toLowerCase().includes(query);
+                    });
+
+                    const grouped = new Map();
+
+                    items.forEach(tile => {
+                        const letter = tile.title[0].toUpperCase();
+                        if (!grouped.has(letter)) {
+                            grouped.set(letter, []);
+                        }
+
+                        grouped.get(letter).push(tile);
+                    });
+
+                    return Array.from(grouped.entries()).map(([letter, tiles]) => ({ letter, tiles }));
+                },
+
+                scrollToTile(tileId) {
+                    const tileElement = document.getElementById(`tile-${tileId}`);
+                    if (tileElement) {
+                        tileElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    this.launcherOpen = false;
+                },
+
+                getCalendarMarkup() {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = now.getMonth();
+                    const dayOfMonth = now.getDate();
+                    const monthLabel = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                    const firstDayIndex = new Date(year, month, 1).getDay();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    const weekdayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+                    let cells = '';
+                    for (let empty = 0; empty < firstDayIndex; empty += 1) {
+                        cells += '<div></div>';
+                    }
+
+                    for (let day = 1; day <= daysInMonth; day += 1) {
+                        const isToday = day === dayOfMonth;
+                        cells += `<div class="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold ${isToday ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-100/90'}">${day}</div>`;
+                    }
+
+                    return `
+                        <div class="flex h-full w-full flex-col justify-between px-5 py-5 text-white">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <div class="text-[10px] uppercase tracking-[0.28em] text-white/65">Calendar</div>
+                                    <div class="text-xl font-light mt-0.5">${monthLabel}</div>
+                                </div>
+                                <div class="text-right text-[10px] uppercase tracking-widest text-white/70">Today</div>
+                            </div>
+                            <div class="mt-4 grid flex-1 content-end">
+                                <div class="mb-3 grid grid-cols-7 gap-0.5 text-center text-[9px] uppercase tracking-[0.16em] text-white/55">
+                                    ${weekdayLabels.map(label => `<div>${label}</div>`).join('')}
+                                </div>
+                                <div class="grid grid-cols-7 gap-0.5 place-items-center">
+                                    ${cells}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                },
+
+                getClockFaceMarkup() {
+                    const now = new Date();
+                    const hours = now.getHours() % 12;
+                    const minutes = now.getMinutes();
+                    const hourRotation = (hours * 30) + (minutes * 0.5);
+                    const minuteRotation = minutes * 6;
+                    const tickMarks = Array.from({ length: 12 }, (_, index) => {
+                        const rotation = index * 30;
+                        const isMajorTick = index % 3 === 0;
+                        return `<span class="absolute left-1/2 top-1/2 block origin-left ${isMajorTick ? 'h-[2px] w-[14px] bg-white/60' : 'h-[1px] w-[11px] bg-white/28'}" style="transform: rotate(${rotation}deg) translateY(-50%);"></span>`;
+                    }).join('');
+                    const hourLabels = [
+                        { label: '12', className: 'left-1/2 top-2 -translate-x-1/2' },
+                        { label: '3', className: 'right-2 top-1/2 -translate-y-1/2' },
+                        { label: '6', className: 'bottom-2 left-1/2 -translate-x-1/2' },
+                        { label: '9', className: 'left-2 top-1/2 -translate-y-1/2' }
+                    ];
+
+                    return `
+                        <div class="flex h-full w-full items-center justify-center">
+                            <div class="relative h-28 w-28 rounded-full border border-white/15 bg-stone-950/90 shadow-[0_12px_30px_rgba(0,0,0,0.35)] backdrop-blur-sm">
+                                ${tickMarks}
+                                ${hourLabels.map(item => `<span class="absolute ${item.className} text-[9px] font-semibold text-white/82">${item.label}</span>`).join('')}
+                                <div class="absolute inset-2 rounded-full border border-white/10"></div>
+                                <div class="absolute left-1/2 top-1/2 h-8 w-[2px] origin-bottom -translate-x-1/2 rounded-full bg-white" style="transform: translateX(-50%) translateY(-100%) rotate(${hourRotation}deg);"></div>
+                                <div class="absolute left-1/2 top-1/2 h-11 w-[1.5px] origin-bottom -translate-x-1/2 rounded-full bg-amber-200" style="transform: translateX(-50%) translateY(-100%) rotate(${minuteRotation}deg);"></div>
+                                <div class="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"></div>
+                            </div>
+                        </div>
+                    `;
+                },
+
+                getMockupMarkup() {
+                    const mockupTiles = [
+                        { span: 'col-span-3 row-span-2', tone: 'bg-white/10', label: 'Hero', meta: '01', accent: 'bg-white/50' },
+                        { span: 'col-span-2 row-span-1', tone: 'bg-white/12', label: 'Toolbar', meta: '02', accent: 'bg-amber-200/70' },
+                        { span: 'col-span-1 row-span-2', tone: 'bg-white/8', label: 'Stats', meta: '03', accent: 'bg-white/35' },
+                        { span: 'col-span-2 row-span-2', tone: 'bg-white/14', label: 'Card', meta: '04', accent: 'bg-stone-200/70' },
+                        { span: 'col-span-3 row-span-1', tone: 'bg-white/8', label: 'Banner', meta: '05', accent: 'bg-white/45' },
+                        { span: 'col-span-2 row-span-2', tone: 'bg-white/10', label: 'Media', meta: '06', accent: 'bg-emerald-200/70' },
+                        { span: 'col-span-1 row-span-1', tone: 'bg-white/12', label: 'Chip', meta: '07', accent: 'bg-white/60' },
+                        { span: 'col-span-2 row-span-1', tone: 'bg-white/9', label: 'List', meta: '08', accent: 'bg-sky-200/70' },
+                        { span: 'col-span-3 row-span-1', tone: 'bg-white/13', label: 'Footer', meta: '09', accent: 'bg-white/35' }
+                    ];
+
+                    return `
+                        <div class="flex h-full w-full flex-col bg-stone-950/95 p-2 text-stone-100">
+                            <div class="mb-2 flex items-center justify-between px-1 text-[9px] uppercase tracking-[0.3em] text-white/55">
+                                <span>Mockup</span>
+                                <span>Tile Wall</span>
+                            </div>
+                            <div class="grid flex-1 grid-cols-6 grid-rows-6 gap-2 overflow-hidden rounded-2xl bg-white/5 p-2 shadow-inner">
+                                ${mockupTiles.map((tile, index) => `
+                                    <div class="${tile.span} ${tile.tone} rounded-xl border border-white/10 p-2 text-[9px] uppercase tracking-[0.2em] text-white/80 shadow-sm">
+                                        <div class="flex h-full flex-col justify-between">
+                                            <div class="flex items-center justify-between text-white/65">
+                                                <span>${tile.label}</span>
+                                                <span>${tile.meta}</span>
+                                            </div>
+                                            <div class="mt-2 flex-1 rounded-lg border border-white/8 bg-black/15 p-2">
+                                                ${index === 0 ? '<div class="h-full rounded-md bg-gradient-to-br from-white/18 to-white/6"></div>' : ''}
+                                                ${index === 1 ? '<div class="flex h-full items-center gap-2"><div class="h-6 w-6 rounded-full bg-white/18"></div><div class="flex-1 space-y-1"><div class="h-2 w-16 rounded-full bg-white/35"></div><div class="h-2 w-10 rounded-full bg-white/20"></div></div></div>' : ''}
+                                                ${index === 2 ? '<div class="h-full rounded-md border border-dashed border-white/18"></div>' : ''}
+                                                ${index === 3 ? '<div class="grid h-full grid-cols-2 gap-2"><div class="rounded-md bg-white/18"></div><div class="rounded-md bg-white/10"></div></div>' : ''}
+                                                ${index === 4 ? '<div class="h-full rounded-md bg-gradient-to-r from-white/16 to-transparent"></div>' : ''}
+                                                ${index === 5 ? '<div class="flex h-full flex-col justify-end"><div class="h-8 rounded-md bg-white/14"></div></div>' : ''}
+                                                ${index === 6 ? '<div class="flex h-full items-center justify-center"><div class="h-4 w-4 rounded-full bg-white/55"></div></div>' : ''}
+                                                ${index === 7 ? '<div class="flex h-full items-center justify-between"><div class="h-2 w-10 rounded-full bg-white/28"></div><div class="h-6 w-6 rounded-full bg-white/18"></div></div>' : ''}
+                                                ${index === 8 ? '<div class="grid h-full grid-cols-3 gap-1"><div class="rounded-md bg-white/12"></div><div class="rounded-md bg-white/18"></div><div class="rounded-md bg-white/10"></div></div>' : ''}
+                                            </div>
+                                            <div class="mt-2 flex items-center gap-2 text-white/55">
+                                                <span class="h-1.5 w-1.5 rounded-full ${tile.accent}"></span>
+                                                <span>${tile.span.replace(/col-span-/g, 'c').replace(/row-span-/g, 'r')}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="mt-2 flex items-center justify-between px-1 text-[9px] uppercase tracking-[0.3em] text-white/45">
+                                <span>Windows Phone</span>
+                                <span>UI</span>
+                            </div>
+                        </div>
+                    `;
+                },
+
+                init() {
+                    window.addEventListener('storage', (event) => {
+                        if (event.key === 'siteMoss_tonePalette' || event.key === 'siteMoss_tonePaletteId') {
+                            this.tonePalette = getStoredTonePalette();
+                            this.tiles = this.buildTiles();
+                        }
+                    });
+
+                    window.addEventListener('siteMossPaletteChanged', () => {
+                        this.tonePalette = getStoredTonePalette();
+                        this.tiles = this.buildTiles();
+                    });
+
+                    this.tiles = this.buildTiles();
+                    this.loadLiveTiles();
+                },
+
+                buildTiles() {
+                    return [
+                        { id: 1, title: 'AI Vision', size: 'col-span-2 row-span-2', bgColor: this.tonePalette[0] || '#E8E2D2', html: '<svg class="w-16 h-16 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>' },
+                        { id: 2, title: 'NextWBC AI', size: 'col-span-2 row-span-2', bgColor: this.tonePalette[1] || '#C8B49C', html: '<svg class="w-14 h-14 text-stone-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>' },
+                        { id: 3, title: 'Photos Tool', size: 'col-span-2 row-span-1', bgColor: this.tonePalette[2] || '#E8E2D2', html: '<svg class="w-8 h-8 text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>' },
+                        { id: 4, title: 'Network', size: 'col-span-2 row-span-1', bgColor: this.tonePalette[3] || '#8FA082', html: '<svg class="w-8 h-8 text-stone-800" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" /></svg>' },
+                        { id: 5, title: 'Bangkok', size: 'col-span-2 row-span-1', bgImage: `background-image: linear-gradient(to top, rgba(0,0,0,0.45), rgba(0,0,0,0.15)), url('${this.weatherBackground}'); background-size: cover; background-position: center;`, bgColor: '#8FA082', html: `<div class="flex items-center gap-3"><svg class="w-5 h-5 text-white/90" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg><span class="text-2xl font-light text-white">${this.weatherTemperature}°C</span></div>` },
+                        { id: 6, title: 'Local Time', size: 'col-span-2 row-span-2', bgColor: '#C8B49C', html: this.getClockFaceMarkup(this.theme) },
+                        { id: 7, title: 'Sonic Personas', size: 'col-span-3 row-span-2', bgColor: '#4A5D23', bgImage: "background-image: linear-gradient(to right, rgba(0,0,0,0.65), rgba(0,0,0,0.18)), url('assets/image/MDNATour-1.jpg'); background-size: cover; background-position: center;", html: '<div class="flex flex-col items-start justify-center w-full h-full px-6 text-white"><div class="text-[10px] uppercase tracking-widest font-bold text-stone-300">Spotify Analysis</div><div class="text-3xl font-light mt-1">Diva DNA</div></div>' },
+                        { id: 8, title: 'Air Quality', size: 'col-span-2 row-span-3', bgImage: `background-image: linear-gradient(to top, rgba(15, 23, 42, 0.70), rgba(15, 23, 42, 0.10)), url('${this.getAirQualityMeta(this.airQualityValue).image}'); background-size: cover; background-position: center;`, bgColor: this.getAirQualityColor(), html: `<div class="flex h-full w-full flex-col justify-end items-center pb-6"><div class="text-5xl font-light text-white drop-shadow">${this.airQualityValue}</div><div class="mt-2 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${this.getAirQualityMeta(this.airQualityValue).badgeClass}">${this.airQualityLabel}</div></div>` },
+                        { id: 9, title: 'Calendar', size: 'col-span-2 row-span-3', bgColor: this.tonePalette[2] || '#775845', html: this.getCalendarMarkup() },
+                        { id: 10, title: 'Articles', size: 'col-span-1 row-span-1', bgColor: this.tonePalette[3] || '#8FA082', html: '<div class="flex h-full w-full items-center justify-center"><svg class="w-7 h-7 text-stone-900" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H14" /></svg></div>' },
+                        { id: 11, title: 'Tasks', size: 'col-span-1 row-span-1', bgColor: this.tonePalette[4] || '#E8E2D2', html: '<div class="flex h-full w-full items-center justify-center"><svg class="w-6 h-6 text-stone-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg></div>' },
+                        { id: 12, title: 'Library', size: 'col-span-2 row-span-2', bgColor: this.tonePalette[0] || '#D7C2A9', html: '<div class="flex h-full w-full flex-col justify-between px-4 py-4 text-stone-800"><div class="flex justify-between items-center"><div class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Library</div><i data-lucide="book-open" class="w-4 h-4 text-stone-400"></i></div><div class="flex-1 my-3 flex flex-col justify-center rounded-xl p-3 bg-gradient-to-br from-white/60 to-white/20 shadow-sm border border-white/50 backdrop-blur-md"><div class="text-[11px] font-bold uppercase tracking-[0.2em] text-stone-700 mb-1.5">Collections</div><div class="space-y-1.5"><div class="h-2 w-10/12 rounded-full bg-stone-800/25"></div><div class="h-2 w-7/12 rounded-full bg-stone-800/15"></div><div class="h-2 w-8/12 rounded-full bg-stone-800/10"></div></div></div><div class="text-[9px] font-bold uppercase tracking-[0.25em] text-stone-500 flex justify-between"><span>Archive</span><span>14 items</span></div></div>' },
+                        { id: 13, title: 'Messages', size: 'col-span-2 row-span-1', bgColor: this.tonePalette[3] || '#8FA082', html: '<div class="flex h-full w-full items-center justify-between px-5 text-stone-900"><div><div class="text-[10px] font-bold uppercase tracking-[0.24em] text-stone-700/80">Messages</div><div class="mt-0.5 font-sans text-xl font-light">12 new</div></div><div class="flex h-11 w-11 items-center justify-center rounded-full bg-white/40 shadow-sm border border-white/30 backdrop-blur-md"><svg class="h-5 w-5 text-stone-800" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h8m-8 4h5m9 2a2 2 0 01-2 2H7l-4 4V6a2 2 0 012-2h14a2 2 0 012 2v10z" /></svg></div></div>' },
+                        { id: 14, title: 'Notes', size: 'col-span-2 row-span-2', bgColor: this.tonePalette[4] || '#E8E2D2', html: '<div class="flex h-full w-full flex-col justify-between px-3 py-4 text-stone-800"><div class="text-center"><div class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/50 shadow-sm"><i data-lucide="edit-3" class="w-5 h-5 text-stone-600"></i></div></div><div class="mt-auto space-y-3 mb-4 w-full"><div class="h-6 w-[90%] mx-auto rounded-xl bg-white/40 shadow-sm border border-white/20"></div><div class="h-6 w-3/4 mx-auto rounded-xl bg-white/25 shadow-sm border border-white/10"></div></div><div class="text-center text-[10px] font-bold uppercase tracking-[0.25em] text-stone-500">Quick jot</div></div>' },
+                        { id: 15, title: 'Studio', size: 'col-span-3 row-span-2', bgColor: '#4A5D23', html: '<div class="flex h-full w-full flex-col justify-between p-5 text-white"><div class="flex items-center justify-between"><div class="text-[10px] font-bold uppercase tracking-[0.3em] text-white/70">Studio</div><i data-lucide="layers" class="w-4 h-4 text-white/50"></i></div><div class="flex-1 mt-4 flex items-center gap-4"><div class="h-16 w-16 rounded-2xl bg-gradient-to-br from-white/30 to-white/5 border border-white/20 shadow-inner flex items-center justify-center"><i data-lucide="plus" class="w-6 h-6 text-white/80"></i></div><div><div class="text-3xl font-light tracking-wide">Create</div><div class="mt-1 text-xs text-white/70 font-medium">Start a new project board</div></div></div><div class="text-[9px] font-bold uppercase tracking-[0.3em] text-white/55">Active Workspace</div></div>' },
+                        
+                        // Filler blank tiles
+                        { id: 16, title: '', size: 'col-span-1 row-span-1', bgColor: this.tonePalette[0] || '#D7C2A9', html: '' },
+                        { id: 17, title: '', size: 'col-span-1 row-span-1', bgColor: this.tonePalette[1] || '#EEF1E6', html: '' },
+                        { id: 18, title: '', size: 'col-span-1 row-span-1', bgColor: this.tonePalette[2] || '#B7C3A1', html: '' },
+                        { id: 19, title: '', size: 'col-span-1 row-span-1', bgColor: this.tonePalette[3] || '#F7E7DD', html: '' },
+                        { id: 20, title: '', size: 'col-span-1 row-span-1', bgColor: this.tonePalette[4] || '#EBC9B7', html: '' },
+                        { id: 21, title: '', size: 'col-span-1 row-span-1', bgColor: this.tonePalette[0] || '#D8DDE8', html: '' },
+                        { id: 22, title: '', size: 'col-span-1 row-span-1', bgColor: this.tonePalette[2] || '#AAB6CC', html: '' },
+                        { id: 23, title: '', size: 'col-span-1 row-span-1', bgColor: this.tonePalette[3] || '#C6D0C0', html: '' },
+                        { id: 24, title: '', size: 'col-span-1 row-span-1', bgColor: this.tonePalette[4] || '#6F8262', html: '' },
+                        { id: 25, title: '', size: 'col-span-1 row-span-1', bgColor: this.tonePalette[1] || '#9EAE93', html: '' },
+                        { id: 26, title: '', size: 'col-span-1 row-span-1', bgColor: this.tonePalette[2] || '#F0D1CC', html: '' },
+                        { id: 27, title: '', size: 'col-span-1 row-span-1', bgColor: this.tonePalette[3] || '#E8B8B4', html: '' }
+                    ];
+                },
+
+                async loadLiveTiles() {
+                    try {
+                        const weatherResponse = await fetch('https://api.open-meteo.com/v1/forecast?latitude=13.7563&longitude=100.5018&current=temperature_2m&timezone=Asia%2FBangkok');
+                        const weatherData = await weatherResponse.json();
+                        this.weatherTemperature = Math.round(weatherData?.current?.temperature_2m ?? 34);
+                        this.weatherCondition = 'Bangkok Weather';
+                    } catch {
+                        this.weatherTemperature = 34;
+                        this.weatherCondition = 'Bangkok Weather';
+                    }
+
+                    try {
+                        const airQualityResponse = await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude=13.7563&longitude=100.5018&current=us_aqi,pm2_5&timezone=Asia%2FBangkok');
+                        const airQualityData = await airQualityResponse.json();
+                        const aqi = Math.round(airQualityData?.current?.us_aqi ?? 42);
+                        this.airQualityValue = aqi;
+                        const airQualityMeta = this.getAirQualityMeta(aqi);
+                        this.airQualityLabel = airQualityMeta.label;
+                        this.airQualityBadgeClass = airQualityMeta.badgeClass;
+                        this.airQualityImage = airQualityMeta.image;
+                    } catch {
+                        this.airQualityValue = 42;
+                        const airQualityMeta = this.getAirQualityMeta(42);
+                        this.airQualityLabel = airQualityMeta.label;
+                        this.airQualityBadgeClass = airQualityMeta.badgeClass;
+                        this.airQualityImage = airQualityMeta.image;
+                    }
+
+                    this.tiles = this.buildTiles();
+                },
+
+                tiles: []
+            }
+        }
+    </script>
+</body>
+</html>
