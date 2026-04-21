@@ -17,6 +17,10 @@
           extend: {
             fontFamily: {
               sans: ['"DM Sans"', 'sans-serif'],
+            },
+            screens: {
+              'uw': { 'raw': '(min-aspect-ratio: 21/9)' },
+              'suw': { 'raw': '(min-aspect-ratio: 32/9)' },
             }
           }
         }
@@ -25,6 +29,21 @@
     
     <!-- CSS Template สำหรับ Tile ทุกขนาด ลดความซับซ้อนด้วย @apply -->
     <style type="text/tailwindcss">
+        @layer base {
+            :root {
+                --cell: clamp(4rem, calc((100vh - 12rem) / 5), 5.5rem);
+            }
+            @media (min-aspect-ratio: 21/9) {
+                :root {
+                    --cell: clamp(4rem, calc((100vh - 12rem) / 4), 5.75rem);
+                }
+            }
+            @media (min-aspect-ratio: 32/9) {
+                :root {
+                    --cell: clamp(4rem, calc((100vh - 12rem) / 3), 6.25rem);
+                }
+            }
+        }
         @keyframes tilePop {
             0% { opacity: 0; transform: scale(0.85) translateY(20px); }
             100% { opacity: 1; transform: scale(1) translateY(0); }
@@ -127,7 +146,7 @@
 
     <div x-data="dashboardData()">
         <!-- Main Content Area (Dashboard view) -->
-        <main class="pt-28 md:pt-32 px-6 md:px-12 w-full mx-auto min-h-[min(100vh,950px)] pb-12 transition duration-300 md:flex md:items-center overflow-x-hidden md:overflow-x-auto md:overflow-y-hidden cursor-grab active:cursor-grabbing [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" 
+        <main class="pt-16 md:pt-20 px-6 md:px-12 w-full mx-auto min-h-[min(100vh,950px)] pb-12 transition duration-300 md:flex md:items-center overflow-x-hidden md:overflow-x-auto md:overflow-y-hidden cursor-grab active:cursor-grabbing [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" 
               :class="launcherOpen ? 'blur-[10px] scale-[0.985] pointer-events-none select-none' : ''"
               x-ref="scrollContainer"
               @mousedown="isDown = true; startX = $event.pageX - $refs.scrollContainer.offsetLeft; scrollLeft = $refs.scrollContainer.scrollLeft"
@@ -139,7 +158,7 @@
           CSS Grid แบบ Friv/Pinterest Style สำหรับมือถือ (แนวตั้ง) 
           และแนวนอน (Horizontal Scroll) สำหรับ Desktop/Tablet
         -->
-        <div class="grid justify-center md:justify-start gap-3 grid-flow-dense grid-cols-[repeat(auto-fit,minmax(5.5rem,5.5rem))] md:grid-cols-[none] auto-rows-[5.5rem] md:grid-rows-[repeat(5,5.5rem)] md:grid-flow-col md:auto-cols-[5.5rem] w-full md:w-max min-h-[min-content] pointer-events-auto">
+        <div class="grid justify-center md:justify-start gap-3 grid-flow-dense grid-cols-[repeat(auto-fit,minmax(var(--cell),var(--cell)))] md:grid-cols-[none] auto-rows-[var(--cell)] md:grid-rows-[repeat(5,var(--cell))] uw:grid-rows-[repeat(4,var(--cell))] suw:grid-rows-[repeat(3,var(--cell))] md:grid-flow-col md:auto-cols-[var(--cell)] w-full md:w-max min-h-[min-content] pointer-events-auto">
             
             <!-- 
                 นี่คือ Tile Template ของจริงที่ใช้โครงสร้างจาก Alpine.js
@@ -147,15 +166,15 @@
                 แค่แก้ข้อมูลใน Script ด้านล่าง ก็จะได้กล่องใหม่ทันที หมดปัญหาโค้ด HTML รกๆ
             -->
             <template x-for="(tile, index) in tiles" :key="tile.id">
-                <div :id="'tile-' + tile.id" :class="['tile', tile.size]" :style="tileBackground(tile, index) + '; animation-delay: ' + (index * 45) + 'ms;'">
+                <a :id="'tile-' + tile.id" :href="tile.link || '#'" :class="['tile', tile.size]" :style="tileBackground(tile, index) + '; animation-delay: ' + (index * 45) + 'ms;'">
                     
                     <!-- เนื้อหาภายใน Tile -->
                     <div class="tile-live" x-html="tile.html"></div>
                     
-                    <!-- ชื่อไทล์ -->
+                    <!-- ชื่อไตเติล -->
                     <span x-show="tile.title && tile.size !== 'col-span-1 row-span-1' && tile.size !== 'col-span-1 row-span-2'" class="tile-title" x-text="tile.title"></span>
                     
-                </div>
+                </a>
             </template>
 
         </main>
@@ -166,7 +185,7 @@
             </button>
         </div>
 
-        <div x-show="launcherOpen" x-transition class="fixed inset-0 z-40 bg-black/5 backdrop-blur-xl" @click="launcherOpen = false" style="display: none;"></div>
+        <div x-show="launcherOpen" x-transition class="fixed inset-0 z-40 backdrop-blur-2xl transition-colors duration-300" :class="theme === 'dark' ? 'bg-stone-950/80' : 'bg-white/85'" @click="launcherOpen = false" style="display: none;"></div>
 
         <section x-show="launcherOpen" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 pointer-events-none" style="display: none;">
             <div class="flex h-full w-full max-w-5xl pointer-events-auto" @click.outside="launcherOpen = false">
@@ -176,7 +195,7 @@
                     <div class="grid grid-cols-5 gap-y-10 gap-x-2 text-center">
                         <template x-for="letter in ['&','#','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','🌐']">
                             <button class="text-3xl font-light transition-transform hover:scale-125"
-                                    :class="theme === 'dark' ? 'text-white/60 hover:text-white' : 'text-stone-600 hover:text-stone-900'"
+                                    :class="theme === 'dark' ? 'text-white/80 hover:text-white font-medium' : 'text-stone-800 hover:text-black font-medium'"
                                     x-text="letter.toUpperCase()"></button>
                         </template>
                     </div>
@@ -194,26 +213,26 @@
                     </div>
 
                     <div>
-                        <label class="flex items-center gap-3 rounded-xl border px-4 py-3 text-sm shadow-sm transition" :class="theme === 'dark' ? 'border-white/10 bg-stone-900/50 text-stone-100 backdrop-blur-md focus-within:bg-stone-900/80 focus-within:border-white/30' : 'border-stone-200 bg-white/60 text-stone-700 backdrop-blur-md focus-within:bg-white/90 focus-within:border-stone-400'">
-                            <i data-lucide="search" class="w-4 h-4 opacity-70"></i>
-                            <input x-model="launcherQuery" type="search" placeholder="Search apps" class="w-full bg-transparent outline-none placeholder:opacity-50" />
+                        <label class="flex items-center gap-3 rounded-2xl border px-5 py-4 text-base shadow-sm transition" :class="theme === 'dark' ? 'border-white/10 bg-stone-900/60 text-stone-100 backdrop-blur-md focus-within:bg-stone-900/90 focus-within:border-white/40' : 'border-stone-200 bg-white/80 text-stone-800 backdrop-blur-md focus-within:bg-white focus-within:border-stone-400'">
+                            <i data-lucide="search" class="w-5 h-5 opacity-70"></i>
+                            <input x-model="launcherQuery" type="search" placeholder="Search apps" class="w-full bg-transparent outline-none placeholder:opacity-50 font-medium" />
                         </label>
                     </div>
 
                     <div class="min-h-0 flex-1 overflow-y-auto mt-6 pr-2 lg:pr-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         <template x-for="section in getLauncherSections()" :key="section.letter">
                             <div class="mb-6">
-                                <div class="px-2 pb-2 text-xl font-light" :class="theme === 'dark' ? 'text-white/50' : 'text-stone-400'" x-text="section.letter"></div>
+                                <div class="px-3 pb-2 text-xl font-medium" :class="theme === 'dark' ? 'text-white/60' : 'text-stone-400'" x-text="section.letter"></div>
                                 <div class="space-y-1">
                                     <template x-for="tile in section.tiles" :key="tile.id">
-                                        <button @click="scrollToTile(tile.id)" class="flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm transition" :class="theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/5'">
+                                        <button @click="scrollToTile(tile.id)" class="flex w-full items-center justify-between rounded-2xl px-3 py-3 text-left transition" :class="theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/5'">
                                             <div class="flex items-center gap-4">
-                                                <div class="flex h-10 w-10 items-center justify-center rounded-xl" :class="theme === 'dark' ? 'bg-white/5' : 'bg-white shadow-sm border border-stone-100'">
-                                                    <i data-lucide="circle" class="w-5 h-5 opacity-40"></i>
+                                                <div class="flex h-12 w-12 items-center justify-center rounded-xl" :class="theme === 'dark' ? 'bg-white/10 text-white' : 'bg-white shadow-sm border border-stone-200 text-stone-700'">
+                                                    <i data-lucide="circle" class="w-6 h-6 opacity-50"></i>
                                                 </div>
-                                                <span class="text-base" :class="theme === 'dark' ? 'text-stone-100' : 'text-stone-800'" x-text="tile.title"></span>
+                                                <span class="text-lg font-medium tracking-wide" :class="theme === 'dark' ? 'text-white' : 'text-stone-900'" x-text="tile.title"></span>
                                             </div>
-                                            <i data-lucide="chevron-right" class="w-4 h-4 opacity-30"></i>
+                                            <i data-lucide="chevron-right" class="w-5 h-5 opacity-30"></i>
                                         </button>
                                     </template>
                                 </div>
@@ -416,25 +435,31 @@
 
                     for (let day = 1; day <= daysInMonth; day += 1) {
                         const isToday = day === dayOfMonth;
-                        cells += `<div class="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold ${isToday ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-100/90'}">${day}</div>`;
+                        cells += `<div class="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold ${isToday ? 'bg-white text-stone-900 shadow-sm' : 'text-white'}">${day}</div>`;
                     }
 
                     return `
-                        <div class="flex h-full w-full flex-col justify-between px-5 py-5 text-white">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <div class="text-[10px] uppercase tracking-[0.28em] text-white/65">Calendar</div>
-                                    <div class="text-xl font-light mt-0.5">${monthLabel}</div>
+                        <div class="flex flex-col h-full w-full">
+                            <!-- Normal View -->
+                            <div class="flex h-full w-full flex-col p-4 text-white uw:hidden">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="text-[13px] font-semibold text-white/90 uppercase tracking-wider">${now.toLocaleDateString('en-US', { month: 'long' })}</div>
+                                    <div class="text-[13px] font-semibold text-white/90">${year}</div>
                                 </div>
-                                <div class="text-right text-[10px] uppercase tracking-widest text-white/70">Today</div>
+                                <div class="flex-1 flex flex-col justify-end">
+                                    <div class="grid grid-cols-7 gap-[2px] text-center text-[10px] font-medium text-white/50 mb-1">
+                                        ${weekdayLabels.map(label => `<div>${label}</div>`).join('')}
+                                    </div>
+                                    <div class="grid grid-cols-7 gap-[2px] place-items-center">
+                                        ${cells}
+                                    </div>
+                                </div>
                             </div>
-                            <div class="mt-4 grid flex-1 content-end">
-                                <div class="mb-3 grid grid-cols-7 gap-0.5 text-center text-[9px] uppercase tracking-[0.16em] text-white/55">
-                                    ${weekdayLabels.map(label => `<div>${label}</div>`).join('')}
-                                </div>
-                                <div class="grid grid-cols-7 gap-0.5 place-items-center">
-                                    ${cells}
-                                </div>
+                            <!-- Shrink/Compact View -->
+                            <div class="hidden uw:flex h-full w-full flex-col items-center justify-center text-white bg-black/10">
+                                <div class="text-xs uppercase tracking-widest text-white/50 mb-1">${now.toLocaleDateString('en-US', { weekday: 'long' })}</div>
+                                <div class="text-4xl font-light">${dayOfMonth}</div>
+                                <div class="text-[10px] font-bold uppercase tracking-widest mt-2 text-white/70">${now.toLocaleDateString('en-US', { month: 'long' })} ${year}</div>
                             </div>
                         </div>
                     `;
@@ -551,15 +576,15 @@
                         { id: 4, title: 'Network', size: 'col-span-2 row-span-1', bgColor: this.tonePalette[3] || '#8FA082', html: '<svg class="w-8 h-8 text-stone-800" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" /></svg>' },
                         { id: 5, title: 'Bangkok', size: 'col-span-2 row-span-1', bgImage: `background-image: linear-gradient(to top, rgba(0,0,0,0.45), rgba(0,0,0,0.15)), url('${this.weatherBackground}'); background-size: cover; background-position: center;`, bgColor: '#8FA082', html: `<div class="flex items-center gap-3"><svg class="w-5 h-5 text-white/90" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg><span class="text-2xl font-light text-white">${this.weatherTemperature}°C</span></div>` },
                         { id: 6, title: 'Local Time', size: 'col-span-2 row-span-2', bgColor: '#C8B49C', html: this.getClockFaceMarkup(this.theme) },
-                        { id: 7, title: 'Sonic Personas', size: 'col-span-3 row-span-2', bgColor: '#4A5D23', bgImage: "background-image: linear-gradient(to right, rgba(0,0,0,0.65), rgba(0,0,0,0.18)), url('assets/image/MDNATour-1.jpg'); background-size: cover; background-position: center;", html: '<div class="flex flex-col items-start justify-center w-full h-full px-6 text-white"><div class="text-[10px] uppercase tracking-widest font-bold text-stone-300">Spotify Analysis</div><div class="text-3xl font-light mt-1">Diva DNA</div></div>' },
-                        { id: 8, title: 'Air Quality', size: 'col-span-2 row-span-3', bgImage: `background-image: linear-gradient(to top, rgba(15, 23, 42, 0.70), rgba(15, 23, 42, 0.10)), url('${this.getAirQualityMeta(this.airQualityValue).image}'); background-size: cover; background-position: center;`, bgColor: this.getAirQualityColor(), html: `<div class="flex h-full w-full flex-col justify-end items-center pb-6"><div class="text-5xl font-light text-white drop-shadow">${this.airQualityValue}</div><div class="mt-2 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${this.getAirQualityMeta(this.airQualityValue).badgeClass}">${this.airQualityLabel}</div></div>` },
+                        { id: 7, title: 'Sonic Personas', link: 'pages/spotifyanalysis.html', size: 'col-span-3 row-span-2', bgColor: '#4A5D23', bgImage: "background-image: linear-gradient(to right, rgba(0,0,0,0.65), rgba(0,0,0,0.18)), url('assets/image/MDNATour-1.jpg'); background-size: cover; background-position: center;", html: '<div class="flex flex-col items-start justify-center w-full h-full px-6 text-white"><div class="text-[10px] uw:text-[9px] uppercase tracking-widest font-bold text-stone-300">Spotify Analysis</div><div class="text-3xl uw:text-xl font-light mt-1">Diva DNA</div></div>' },
+                        { id: 8, title: 'Air Quality', size: 'col-span-2 row-span-3', bgImage: `background-image: linear-gradient(to top, rgba(15, 23, 42, 0.70), rgba(15, 23, 42, 0.10)), url('${this.getAirQualityMeta(this.airQualityValue).image}'); background-size: cover; background-position: center;`, bgColor: this.getAirQualityColor(), html: `<div class="flex h-full w-full flex-col justify-end items-center pb-6"><div class="text-5xl uw:text-3xl font-light text-white drop-shadow leading-none">${this.airQualityValue}</div><div class="mt-2 uw:mt-1 rounded-full px-3 py-1 text-[10px] uw:text-[9px] font-bold uppercase tracking-widest ${this.getAirQualityMeta(this.airQualityValue).badgeClass}">${this.airQualityLabel}</div></div>` },
                         { id: 9, title: 'Calendar', size: 'col-span-2 row-span-3', bgColor: this.tonePalette[2] || '#775845', html: this.getCalendarMarkup() },
                         { id: 10, title: 'Articles', size: 'col-span-1 row-span-1', bgColor: this.tonePalette[3] || '#8FA082', html: '<div class="flex h-full w-full items-center justify-center"><svg class="w-7 h-7 text-stone-900" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H14" /></svg></div>' },
                         { id: 11, title: 'Tasks', size: 'col-span-1 row-span-1', bgColor: this.tonePalette[4] || '#E8E2D2', html: '<div class="flex h-full w-full items-center justify-center"><svg class="w-6 h-6 text-stone-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg></div>' },
-                        { id: 12, title: 'Library', size: 'col-span-2 row-span-2', bgColor: this.tonePalette[0] || '#D7C2A9', html: '<div class="flex h-full w-full flex-col justify-between px-4 py-4 text-stone-800"><div class="flex justify-between items-center"><div class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Library</div><i data-lucide="book-open" class="w-4 h-4 text-stone-400"></i></div><div class="flex-1 my-3 flex flex-col justify-center rounded-xl p-3 bg-gradient-to-br from-white/60 to-white/20 shadow-sm border border-white/50 backdrop-blur-md"><div class="text-[11px] font-bold uppercase tracking-[0.2em] text-stone-700 mb-1.5">Collections</div><div class="space-y-1.5"><div class="h-2 w-10/12 rounded-full bg-stone-800/25"></div><div class="h-2 w-7/12 rounded-full bg-stone-800/15"></div><div class="h-2 w-8/12 rounded-full bg-stone-800/10"></div></div></div><div class="text-[9px] font-bold uppercase tracking-[0.25em] text-stone-500 flex justify-between"><span>Archive</span><span>14 items</span></div></div>' },
-                        { id: 13, title: 'Messages', size: 'col-span-2 row-span-1', bgColor: this.tonePalette[3] || '#8FA082', html: '<div class="flex h-full w-full items-center justify-between px-5 text-stone-900"><div><div class="text-[10px] font-bold uppercase tracking-[0.24em] text-stone-700/80">Messages</div><div class="mt-0.5 font-sans text-xl font-light">12 new</div></div><div class="flex h-11 w-11 items-center justify-center rounded-full bg-white/40 shadow-sm border border-white/30 backdrop-blur-md"><svg class="h-5 w-5 text-stone-800" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h8m-8 4h5m9 2a2 2 0 01-2 2H7l-4 4V6a2 2 0 012-2h14a2 2 0 012 2v10z" /></svg></div></div>' },
-                        { id: 14, title: 'Notes', size: 'col-span-2 row-span-2', bgColor: this.tonePalette[4] || '#E8E2D2', html: '<div class="flex h-full w-full flex-col justify-between px-3 py-4 text-stone-800"><div class="text-center"><div class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/50 shadow-sm"><i data-lucide="edit-3" class="w-5 h-5 text-stone-600"></i></div></div><div class="mt-auto space-y-3 mb-4 w-full"><div class="h-6 w-[90%] mx-auto rounded-xl bg-white/40 shadow-sm border border-white/20"></div><div class="h-6 w-3/4 mx-auto rounded-xl bg-white/25 shadow-sm border border-white/10"></div></div><div class="text-center text-[10px] font-bold uppercase tracking-[0.25em] text-stone-500">Quick jot</div></div>' },
-                        { id: 15, title: 'Studio', size: 'col-span-3 row-span-2', bgColor: '#4A5D23', html: '<div class="flex h-full w-full flex-col justify-between p-5 text-white"><div class="flex items-center justify-between"><div class="text-[10px] font-bold uppercase tracking-[0.3em] text-white/70">Studio</div><i data-lucide="layers" class="w-4 h-4 text-white/50"></i></div><div class="flex-1 mt-4 flex items-center gap-4"><div class="h-16 w-16 rounded-2xl bg-gradient-to-br from-white/30 to-white/5 border border-white/20 shadow-inner flex items-center justify-center"><i data-lucide="plus" class="w-6 h-6 text-white/80"></i></div><div><div class="text-3xl font-light tracking-wide">Create</div><div class="mt-1 text-xs text-white/70 font-medium">Start a new project board</div></div></div><div class="text-[9px] font-bold uppercase tracking-[0.3em] text-white/55">Active Workspace</div></div>' },
+                        { id: 12, title: 'Library', size: 'col-span-2 row-span-2', bgColor: this.tonePalette[0] || '#D7C2A9', html: '' },
+                        { id: 13, title: 'Messages', size: 'col-span-2 row-span-1', bgColor: this.tonePalette[3] || '#8FA082', html: '' },
+                        { id: 14, title: 'Notes', size: 'col-span-2 row-span-2', bgColor: this.tonePalette[4] || '#E8E2D2', html: '' },
+                        { id: 15, title: 'Studio', size: 'col-span-3 row-span-2', bgColor: '#4A5D23', html: '' },
                         
                         // Filler blank tiles
                         { id: 16, title: '', size: 'col-span-1 row-span-1', bgColor: this.tonePalette[0] || '#D7C2A9', html: '' },

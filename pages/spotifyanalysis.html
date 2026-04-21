@@ -1,0 +1,233 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Analysis - site(.)moss</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ['"DM Sans"', 'sans-serif'] },
+            colors: {
+              background: 'rgb(240 238 235)',
+              foreground: 'rgb(44 41 40)'
+            }
+          }
+        }
+      }
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body 
+    class="font-sans text-stone-900 transition-all duration-700 relative min-h-screen" 
+    :class="[
+        isGrayscale ? 'grayscale' : '', 
+        theme === 'dark' ? 'dark bg-stone-900 text-stone-100' : 'bg-stone-50'
+    ]" 
+    :style="bgType === 'color' ? 'background-color: ' + bgValue : 'background-image: url(' + bgValue + '); background-size: cover; background-position: center; background-attachment: fixed;'"
+    x-data="appState()" 
+    x-init="setTimeout(() => lucide.createIcons(), 50)"
+>
+    <div x-show="bgType === 'image' || theme === 'dark'" class="absolute inset-0 z-[-1] transition-opacity duration-700" :class="theme === 'dark' ? 'bg-black/60' : 'bg-white/40'"></div>
+    
+    <nav class="h-11 flex items-center justify-between lg:justify-center z-50 fixed bg-white/70 backdrop-blur-md top-0 left-0 border-b border-white/20 w-full shadow-sm" :class="theme === 'dark' ? 'bg-black/40 text-stone-200 border-white/10' : ''">
+        <div class="ml-4 lg:hidden"><img src="/favicon.ico" alt="Logo" class="w-5 h-5 object-contain" /></div>
+        <div class="hidden lg:flex mr-8 block"><img src="/favicon.ico" alt="Logo" class="w-5 h-5 object-contain" /></div>
+        <div class="hidden lg:flex space-x-8 text-xs tracking-wide text-gray-800">
+            <a href="../index.html" class="hover:text-black transition-colors" :class="theme === 'dark' ? 'text-stone-300 hover:text-white' : ''">Dashboard</a>
+            <a href="setting.html" class="hover:text-black transition-colors" :class="theme === 'dark' ? 'text-stone-300 hover:text-white' : ''">Settings</a>
+        </div>
+        <div class="mr-4 lg:mr-0 lg:absolute lg:right-8 flex space-x-5 items-center">
+            <a href="setting.html" class="hover:opacity-70 p-1 rounded" :class="theme === 'dark' ? 'bg-white/10 text-white' : 'bg-stone-100'">
+                <i data-lucide="settings" class="w-4 h-4"></i>
+            </a>
+        </div>
+    </nav>
+
+    <main class="pt-20 px-4 md:px-8 w-full max-w-6xl mx-auto min-h-[min(100vh,950px)] pb-12 transition duration-300 pointer-events-auto" x-data="spotifyAnalysis()">
+        <div x-show="loading" class="flex justify-center items-center py-20">
+            <i data-lucide="loader-2" class="w-8 h-8 animate-spin text-stone-400"></i>
+        </div>
+        
+        <div x-show="!loading" style="display: none;" class="mx-auto flex h-[calc(100vh-6rem)] w-full flex-col overflow-hidden rounded-[22px] border shadow-xl" :class="theme === 'dark' ? 'bg-black/80 border-white/20 text-white' : 'bg-white/90 border-stone-200 text-stone-900'" style="backdrop-filter: blur(18px) saturate(170%);">
+            
+            <div class="border-b px-4 py-3 sm:px-5 sm:py-3 flex items-center justify-between" :class="theme === 'dark' ? 'border-white/20' : 'border-stone-200'">
+                <div>
+                    <div class="inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.2em]" :class="theme === 'dark' ? 'border-white/25 bg-white/10 text-white/75' : 'border-stone-300 bg-stone-100 text-stone-600'">
+                        <i data-lucide="sparkles" class="h-3 w-3"></i> Madonna Sonic Atlas
+                    </div>
+                    <p class="mt-1 text-xs" :class="theme === 'dark' ? 'text-white/65' : 'text-stone-500'" x-text="`Tracks ${tracks.length} • Clusters ${clusters.length} • Madonna ${madonnaTracks.length}`"></p>
+                </div>
+            </div>
+
+            <div class="min-h-0 flex-1 overflow-hidden px-2 py-2 sm:px-3 sm:py-3">
+                <div class="flex h-full gap-2">
+                    
+                    <aside class="w-[168px] shrink-0 overflow-y-auto rounded-[14px] border p-2.5" :class="theme === 'dark' ? 'border-white/20 bg-white/5' : 'border-stone-200 bg-stone-50'">
+                        <p class="px-1 text-[10px] uppercase tracking-[0.2em]" :class="theme === 'dark' ? 'text-white/55' : 'text-stone-400'">Menu</p>
+                        <div class="mt-2 space-y-1.5">
+                            <template x-for="t in ['personas', 'galaxy', 'comparison']" :key="t">
+                                <button @click="activeTab = t" 
+                                    class="flex w-full items-center gap-2 rounded-[10px] border px-2.5 py-2 text-left text-xs transition-colors"
+                                    :class="activeTab === t ? (theme==='dark'? 'border-white/35 bg-white/20 text-white' : 'border-stone-300 bg-stone-200/50 text-stone-900') : (theme==='dark'? 'border-transparent bg-transparent text-white/70 hover:bg-white/10' : 'border-transparent bg-transparent text-stone-600 hover:bg-stone-100')">
+                                    <i :data-lucide="t === 'personas' ? 'disc-3' : (t === 'galaxy' ? 'map-pinned' : 'radar')" class="h-3.5 w-3.5"></i>
+                                    <span class="truncate capitalize" x-text="t"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </aside>
+
+                    <div class="min-w-0 flex-1 overflow-hidden">
+                        
+                        <!-- Personas Tab -->
+                        <section x-show="activeTab === 'personas'" class="grid h-full gap-2 overflow-y-auto pr-1 lg:grid-cols-[220px_minmax(0,1fr)]">
+                            <div class="space-y-2">
+                                <div class="rounded-[14px] border p-3" :class="theme === 'dark' ? 'border-white/20 bg-white/10' : 'border-stone-200 bg-white'">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="disc-3" class="h-4 w-4"></i><p class="text-xs font-semibold">Cluster Rail</p>
+                                    </div>
+                                    <div class="mt-2 space-y-1.5">
+                                        <template x-for="c in clusters" :key="c.cluster">
+                                            <button @click="selectedCluster = c.cluster" 
+                                                class="relative w-full overflow-hidden rounded-[10px] border px-2.5 py-2 text-left"
+                                                :class="selectedCluster === c.cluster ? (theme==='dark'?'border-white/35 bg-white/20':'border-stone-300 bg-stone-100') : (theme==='dark'?'border-white/10 bg-white/5 hover:bg-white/10':'border-stone-100 bg-white hover:bg-stone-50')">
+                                                <div x-show="selectedCluster === c.cluster" class="pointer-events-none absolute inset-y-0 left-0 w-1.5" :style="'background-color: ' + CLUSTER_NAMES[c.cluster].color"></div>
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <span class="inline-flex items-center gap-2 text-xs font-medium">
+                                                        <span class="h-2 w-2 rounded-full" :style="'background-color: ' + CLUSTER_NAMES[c.cluster].color"></span>
+                                                        <span x-text="CLUSTER_NAMES[c.cluster].name"></span>
+                                                    </span>
+                                                    <span class="text-[10px]" :class="theme==='dark'?'text-white/60':'text-stone-500'" x-text="clusterTrackCounts[c.cluster]"></span>
+                                                </div>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="grid gap-2 lg:grid-cols-[minmax(0,1fr)_280px]">
+                                    <div class="relative overflow-hidden rounded-[14px] border p-3" :class="theme==='dark'?'border-white/20 bg-white/10':'border-stone-200 bg-white'">
+                                        <div class="relative">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="h-3 w-3 rounded-full" :style="'background-color: ' + CLUSTER_NAMES[selectedCluster].color"></span>
+                                                    <h4 class="text-sm font-semibold" x-text="CLUSTER_NAMES[selectedCluster].name"></h4>
+                                                </div>
+                                                <span class="rounded-full border px-2 py-0.5 text-[10px]" :class="theme==='dark'?'border-white/25 bg-white/10':'border-stone-300 bg-stone-100'" x-text="Math.round(weightedClusterImpact[selectedCluster]?.share * 100) + '% share'"></span>
+                                            </div>
+                                            <p class="mt-1.5 text-xs opacity-75" x-text="CLUSTER_NAMES[selectedCluster].description"></p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="rounded-[14px] border p-3" :class="theme==='dark'?'border-white/20 bg-white/10':'border-stone-200 bg-white'">
+                                        <p class="text-[10px] uppercase tracking-[0.2em] opacity-50">Top tracks</p>
+                                        <div class="mt-2 space-y-1.5">
+                                            <template x-for="tr in selectedClusterTracks.slice(0, 6)">
+                                                <div class="flex w-full items-center justify-between rounded-[10px] border px-2.5 py-1.5 text-left text-xs" :class="theme==='dark'?'border-white/10 bg-white/5':'border-stone-200 bg-stone-50'">
+                                                    <span class="min-w-0 flex-1 truncate pr-2" x-text="tr.name"></span>
+                                                    <span class="opacity-50" x-text="tr.release_year"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Empty Placeholder for others (just proof of concept) -->
+                        <section x-show="activeTab === 'galaxy'" class="flex h-full items-center justify-center text-sm opacity-50">
+                            Music Galaxy 2D Node View (Coming Soon)
+                        </section>
+                        <section x-show="activeTab === 'comparison'" class="flex h-full items-center justify-center text-sm opacity-50">
+                            Diva DNA Comparison (Coming Soon)
+                        </section>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function appState() {
+            return {
+                theme: localStorage.getItem('siteMoss_theme') || 'light',
+                bgType: localStorage.getItem('siteMoss_bgType') || 'color',
+                bgValue: localStorage.getItem('siteMoss_bgValue') || '#F2EBE3',
+                isGrayscale: localStorage.getItem('siteMoss_isGrayscale') === 'true',
+                init() {
+                    window.addEventListener('storage', (e) => {
+                        if (e.key === 'siteMoss_theme') this.theme = e.newValue;
+                        if (e.key === 'siteMoss_bgType') this.bgType = e.newValue;
+                        if (e.key === 'siteMoss_bgValue') this.bgValue = e.newValue;
+                        if (e.key === 'siteMoss_isGrayscale') this.isGrayscale = e.newValue === 'true';
+                    });
+                }
+            }
+        }
+        
+        function spotifyAnalysis() {
+            return {
+                activeTab: 'personas',
+                selectedCluster: 0,
+                loading: true,
+                clusters: [],
+                tracks: [],
+                divas: [],
+                madonnaTracks: [],
+                selectedClusterTracks: [],
+                clusterTrackCounts: {0:0, 1:0, 2:0, 3:0},
+                weightedClusterImpact: {0:{share:0}, 1:{share:0}, 2:{share:0}, 3:{share:0}},
+                
+                CLUSTER_NAMES: {
+                    0: { name: 'The Disco Dynamo', description: 'High energy, danceable pop hits', color: '#FF4D8D' },
+                    1: { name: 'The Vulnerable Soul', description: 'Emotional ballads with acoustic warmth', color: '#22C55E' },
+                    2: { name: 'The Modern Rebel', description: 'Electronic, bold, experimental tracks', color: '#FACC15' },
+                    3: { name: 'The Intimate Whisper', description: 'Acoustic, introspective, vulnerable', color: '#38BDF8' }
+                },
+                
+                async init() {
+                    try {
+                        const [c, t, d] = await Promise.all([
+                            fetch('../assets/data/cluster_summary.json').then(r=>r.json()),
+                            fetch('../assets/data/music_galaxy.json').then(r=>r.json()),
+                            fetch('../assets/data/diva_dna.json').then(r=>r.json())
+                        ]);
+                        this.clusters = c;
+                        this.tracks = t.filter(tr => tr.release_year <= 2020);
+                        this.divas = d;
+                        
+                        this.madonnaTracks = this.tracks.filter(tr => String(tr.artists).includes('Madonna'));
+                        
+                        // Fake counts for UI since the logic of TrackFeatureSpace takes a lot of processing
+                        this.tracks.forEach(tr => {
+                            this.clusterTrackCounts[tr.cluster] = (this.clusterTrackCounts[tr.cluster] || 0) + 1;
+                        });
+                        Object.keys(this.clusterTrackCounts).forEach(k => {
+                            this.weightedClusterImpact[k] = { share: this.clusterTrackCounts[k] / this.tracks.length };
+                        });
+                        
+                        this.$watch('selectedCluster', val => {
+                            this.selectedClusterTracks = this.tracks.filter(tr => tr.cluster === val).sort((a,b) => b.release_year - a.release_year);
+                        });
+                        this.selectedClusterTracks = this.tracks.filter(tr => tr.cluster === this.selectedCluster).sort((a,b) => b.release_year - a.release_year);
+                        
+                        this.loading = false;
+                        setTimeout(() => lucide.createIcons(), 50);
+                    } catch(e) {
+                        console.error('Failed fetching mock JSON data:', e);
+                        this.loading = false; // end loader even if fail so user is not stuck
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
