@@ -1,57 +1,80 @@
-<nav x-data="{ mobileMenuOpen: false }" class="h-11 flex items-center justify-between lg:justify-center z-50 fixed bg-white w-full bg-opacity-90 backdrop-blur-sm top-0 left-0 border-b border-gray-100">
-        
-    <!-- Mobile Left (Spacer & Logo fallback) -->
-    <div class="ml-4 lg:hidden">
-        <a href="#" class="hover:opacity-70 flex items-center justify-center">
-            <img src="/favicon.ico" alt="Logo" class="w-5 h-5 object-contain" />
-        </a>
+<nav class="h-14 flex items-center justify-between z-50 fixed top-0 left-0 w-full border-b border-hud-fg/30 bg-[#E5E5E5]/95 backdrop-blur-md shadow-[0_2px_10px_rgba(0,0,0,0.05)]" :class="theme === 'dark' ? 'bg-[#0A0A0A]/95 border-white/30 shadow-[0_2px_10px_rgba(255,255,255,0.02)]' : ''">
+    <!-- Thin top line -->
+    <div class="absolute left-0 top-0 w-full h-[2px] bg-hud-fg/10 dark:bg-white/10 flex">
+        <div class="w-1/3 h-full bg-hud-fg/40 dark:bg-white/40"></div>
     </div>
-
-    <!-- Desktop Logo -->
-    <div class="hidden lg:flex mr-8 block">
-        <a href="#" class="hover:opacity-70 flex items-center justify-center">
-            <img src="/favicon.ico" alt="Logo" class="w-5 h-5 object-contain" />
-        </a>
+    
+    <div class="flex items-center h-full border-r border-hud-fg/30 px-3 md:px-6" :class="theme === 'dark' ? 'border-white/30' : ''">
+        <div class="relative flex items-center justify-center w-8 h-8 mr-3 border border-hud-fg/40 dark:border-white/40 rounded-sm">
+            <div class="absolute top-[-1px] left-[-1px] w-1.5 h-1.5 border-t border-l border-currentColor"></div>
+            <div class="absolute top-[-1px] right-[-1px] w-1.5 h-1.5 border-t border-r border-currentColor"></div>
+            <div class="absolute bottom-[-1px] left-[-1px] w-1.5 h-1.5 border-b border-l border-currentColor"></div>
+            <div class="absolute bottom-[-1px] right-[-1px] w-1.5 h-1.5 border-b border-r border-currentColor"></div>
+            <img src="/favicon.ico" alt="Favicon" class="w-4 h-4 object-contain filter dark:invert" onerror="this.style.display='none'">
+            <div class="corner-tl dark:border-white"></div><div class="corner-tr dark:border-white"></div>
+            <div class="corner-bl dark:border-white"></div><div class="corner-br dark:border-white"></div>
+        </div>
+        <div class="flex flex-col">
+            <span class="font-mono font-bold tracking-widest text-[11px] leading-none mb-0.5">
+                <a href="/index.html">SITEDOTMOSS</a>
+            </span>
+            <span class="font-mono text-[8px] opacity-60 leading-none">CORE.STATUS: OPTIMAL</span>
+        </div>
     </div>
-
-    <!-- Desktop Links -->
-    <div class="hidden lg:flex space-x-8 text-xs tracking-wide text-gray-800">
-        <a href="#ai-lab" class="hover:text-black transition-colors">AI lab</a>
-        <a href="#work-focus" class="hover:text-black transition-colors">Work & Focus</a>
-        <a href="#other-tools" class="hover:text-black transition-colors">Other Tools</a>
+    
+    <div class="flex-1 flex justify-center h-full items-center px-4">
+        <div class="hidden md:flex space-x-12 text-[11px] tracking-widest font-mono">
+            <a href="/index.html" class="group relative flex items-center gap-2 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                <span class="opacity-0 group-hover:opacity-100 transition-opacity text-amber-600 dark:text-amber-400">></span>
+                <span>DASHBOARD</span>
+                <div class="absolute bottom-[-16px] left-0 w-full h-[2px] bg-transparent transition-colors" x-bind:class="(window.location.pathname.endsWith('index.html') || window.location.pathname === '/') ? '!bg-amber-600 dark:!bg-amber-400' : 'group-hover:bg-amber-600 dark:group-hover:bg-amber-400'"></div>
+            </a>
+            <a href="/pages/blog/blog.html" class="group relative flex items-center gap-2 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                <span class="opacity-0 group-hover:opacity-100 transition-opacity text-amber-600 dark:text-amber-400">></span>
+                <span>ARCHIVE_LOG</span>
+                <div class="absolute bottom-[-16px] left-0 w-full h-[2px] bg-transparent transition-colors" x-bind:class="window.location.pathname.includes('blog') ? '!bg-amber-600 dark:!bg-amber-400' : 'group-hover:bg-amber-600 dark:group-hover:bg-amber-400'"></div>
+            </a>
+            <a href="/pages/setting/setting.html" class="group relative flex items-center gap-2 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                <span class="opacity-0 group-hover:opacity-100 transition-opacity text-amber-600 dark:text-amber-400">></span>
+                <span>CONFIG</span>
+                <div class="absolute bottom-[-16px] left-0 w-full h-[2px] bg-transparent transition-colors" x-bind:class="window.location.pathname.includes('setting') ? '!bg-amber-600 dark:!bg-amber-400' : 'group-hover:bg-amber-600 dark:group-hover:bg-amber-400'"></div>
+            </a>
+        </div>
     </div>
-
-    <!-- Right Side Icons -->
-    <div class="mr-4 lg:mr-0 ml-8 flex space-x-5 items-center">
-        <button class="hover:opacity-70">
-            <!-- Search Icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="w-4 h-4 text-black" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z"/></svg>
+    
+    <div class="flex items-center h-full border-l border-hud-fg/30 pl-3 md:pl-6 pr-4" :class="theme === 'dark' ? 'border-white/30' : ''" x-data="{ open: false }" @click.outside="open = false">
+        <div class="flex flex-col items-end mr-4 hidden sm:flex">
+            <span class="font-mono text-[9px] opacity-70 leading-none mb-0.5" x-text="window.location.pathname.includes('setting') ? 'PORT: CONFIG' : (window.location.pathname.includes('blog') ? 'PORT: 025' : (window.location.pathname.includes('spotify') ? 'PORT: ANALYTIC' : 'PORT: 001'))">PORT: 001</span>
+            <span class="font-mono text-[7px] opacity-40 leading-none">SYS_ACTIVE</span>
+        </div>
+        <button @click="open = !open" class="relative group flex h-8 w-8 border border-hud-fg/30 items-center justify-center hover:border-hud-fg transition-all dark:border-white/30 dark:hover:border-white">
+            <div class="absolute inset-0 bg-hud-fg/5 scale-0 group-hover:scale-100 transition-transform dark:bg-white/10"></div>
+            <i data-lucide="settings" class="w-4 h-4 opacity-70 group-hover:opacity-100 group-hover:rotate-90 transition-all duration-500 relative z-10"></i>
         </button>
-        
-        <!-- Mobile Menu Open/Close Button -->
-        <button class="flex lg:hidden hover:opacity-70 text-black" @click="mobileMenuOpen = !mobileMenuOpen">
-            <!-- Hamburger -->
-            <svg x-show="!mobileMenuOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" /></svg>
-            <!-- Close -->
-            <svg x-show="mobileMenuOpen" style="display:none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-        </button>
-    </div>
-
-    <!-- Mobile Menu Dropdown -->
-    <div x-show="mobileMenuOpen" 
-         style="display:none;" 
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0 -translate-y-5"
-         x-transition:enter-end="opacity-100 translate-y-0"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100 translate-y-0"
-         x-transition:leave-end="opacity-0 -translate-y-5"
-         class="absolute top-11 left-0 w-full h-screen bg-white z-40 flex flex-col px-10 py-6 text-black lg:hidden overflow-y-auto">
-         
-        <div class="flex flex-col space-y-4 text-2xl font-bold tracking-tight">
-            <a href="#ai-lab" @click="mobileMenuOpen = false" class="border-b border-gray-200 pb-3 hover:text-gray-500">AI lab</a>
-            <a href="#work-focus" @click="mobileMenuOpen = false" class="border-b border-gray-200 pb-3 hover:text-gray-500">Work & Focus</a>
-            <a href="#other-tools" @click="mobileMenuOpen = false" class="pb-3 hover:text-gray-500">Other Tools</a>
+        <div x-show="open" x-transition class="absolute right-4 top-16 w-72 border border-hud-fg/30 shadow-2xl z-50 bg-[#E5E5E5] dark:bg-[#0A0A0A] dark:border-white/30" style="display: none;">
+            <div class="absolute top-[-1px] left-[-1px] w-2 h-2 border-t border-l border-currentColor"></div>
+            <div class="absolute top-[-1px] right-[-1px] w-2 h-2 border-t border-r border-currentColor"></div>
+            <div class="absolute bottom-[-1px] left-[-1px] w-2 h-2 border-b border-l border-currentColor"></div>
+            <div class="absolute bottom-[-1px] right-[-1px] w-2 h-2 border-b border-r border-currentColor"></div>
+            
+            <div class="border-b border-hud-fg/20 dark:border-white/20 px-4 py-2 bg-hud-fg/5 dark:bg-white/5">
+                <div class="text-[9px] font-mono tracking-widest text-hud-fg/60 dark:text-white/60">QUICK_PARAMS</div>
+            </div>
+            <div class="p-2 space-y-1 font-mono text-[10px]">
+                <button @click="theme = theme === 'dark' ? 'light' : 'dark'; open = false" class="flex w-full items-center justify-between border border-transparent hover:border-hud-fg/30 dark:hover:border-white/30 px-3 py-2 transition-all hover:bg-hud-fg/5 dark:hover:bg-white/5">
+                    <span class="opacity-80">[SYS_THEME]</span>
+                    <span class="text-amber-600 dark:text-amber-400" x-text="theme === 'dark' ? 'DARK_MODE' : 'LIGHT_MODE'"></span>
+                </button>
+                <button @click="isGrayscale = !isGrayscale; open = false" class="flex w-full items-center justify-between border border-transparent hover:border-hud-fg/30 dark:hover:border-white/30 px-3 py-2 transition-all hover:bg-hud-fg/5 dark:hover:bg-white/5">
+                    <span class="opacity-80">[COLOR_RENDER]</span>
+                    <span class="text-amber-600 dark:text-amber-400" x-text="isGrayscale ? 'MONOCHROME' : 'RGB_ACTIVE'"></span>
+                </button>
+                <div class="h-px bg-hud-fg/10 dark:bg-white/10 my-1"></div>
+                <a href="/pages/setting/setting.html" @click="open = false" class="flex w-full items-center justify-between border border-hud-fg/20 dark:border-white/20 px-3 py-2 transition-all hover:bg-hud-fg hover:text-white dark:hover:bg-white dark:hover:text-black">
+                    <span>OPEN_FULL_CONFIG</span>
+                    <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                </a>
+            </div>
         </div>
     </div>
 </nav>
