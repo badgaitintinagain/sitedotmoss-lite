@@ -4,3 +4,4 @@ old_code/
 .env
 .env.*
 .DS_Store
+.dev.vars
