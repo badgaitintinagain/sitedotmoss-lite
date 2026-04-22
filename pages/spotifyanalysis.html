@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -24,7 +24,7 @@
     </script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-</head>
+<link rel="stylesheet" href="spotifyanalysis.css"></head>
 <body 
     class="font-sans text-stone-900 transition-all duration-700 relative min-h-screen" 
     :class="[
@@ -38,8 +38,8 @@
     <div x-show="bgType === 'image' || theme === 'dark'" class="absolute inset-0 z-[-1] transition-opacity duration-700" :class="theme === 'dark' ? 'bg-black/60' : 'bg-white/40'"></div>
     
     <nav class="h-11 flex items-center justify-between lg:justify-center z-50 fixed bg-white/70 backdrop-blur-md top-0 left-0 border-b border-white/20 w-full shadow-sm" :class="theme === 'dark' ? 'bg-black/40 text-stone-200 border-white/10' : ''">
-        <div class="ml-4 lg:hidden"><img src="/favicon.ico" alt="Logo" class="w-5 h-5 object-contain" /></div>
-        <div class="hidden lg:flex mr-8 block"><img src="/favicon.ico" alt="Logo" class="w-5 h-5 object-contain" /></div>
+        <div class="ml-4 lg:hidden"><a href="/"><img src="/favicon.ico" alt="Logo" class="w-5 h-5 object-contain" /></a></div>
+        <div class="hidden lg:flex mr-8 block"><a href="/"><img src="/favicon.ico" alt="Logo" class="w-5 h-5 object-contain" /></a></div>
         <div class="hidden lg:flex space-x-8 text-xs tracking-wide text-gray-800">
             <a href="../index.html" class="hover:text-black transition-colors" :class="theme === 'dark' ? 'text-stone-300 hover:text-white' : ''">Dashboard</a>
             <a href="setting.html" class="hover:text-black transition-colors" :class="theme === 'dark' ? 'text-stone-300 hover:text-white' : ''">Settings</a>
@@ -63,7 +63,7 @@
                     <div class="inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.2em]" :class="theme === 'dark' ? 'border-white/25 bg-white/10 text-white/75' : 'border-stone-300 bg-stone-100 text-stone-600'">
                         <i data-lucide="sparkles" class="h-3 w-3"></i> Madonna Sonic Atlas
                     </div>
-                    <p class="mt-1 text-xs" :class="theme === 'dark' ? 'text-white/65' : 'text-stone-500'" x-text="`Tracks ${tracks.length} â€¢ Clusters ${clusters.length} â€¢ Madonna ${madonnaTracks.length}`"></p>
+                    <p class="mt-1 text-xs" :class="theme === 'dark' ? 'text-white/65' : 'text-stone-500'" x-text="`Tracks ${tracks.length} • Clusters ${clusters.length} • Madonna ${madonnaTracks.length}`"></p>
                 </div>
             </div>
 

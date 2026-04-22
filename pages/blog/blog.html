@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARCHIVE_LOG // BLOG - site(.)moss</title>
+    <!-- Google Fonts: Space Mono and JetBrains Mono for Micrographics aesthetic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=JetBrains+Mono:wght@100..800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"JetBrains Mono"', 'monospace'],
+              mono: ['"Space Mono"', 'monospace'],
+            },
+            colors: {
+              hud: {
+                bg: '#EBEBEB',
+                fg: '#1A1A1A',
+                accent: '#000000',
+                border: 'rgba(26, 26, 26, 0.25)',
+                muted: 'rgba(26, 26, 26, 0.5)',
+              }
+            },
+            backgroundImage: {
+              'micro-grid': 'linear-gradient(to right, rgba(26,26,26,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(26,26,26,0.05) 1px, transparent 1px)',
+              'micro-dot': 'radial-gradient(rgba(26,26,26,0.15) 1px, transparent 1px)'
+            }
+          }
+        },
+        darkMode: 'class'
+      }
+    </script>
+    
+    <link rel="stylesheet" href="blog.css">
+    <style>
+        .crosshair {
+            position: relative;
+        }
+        .crosshair::before, .crosshair::after {
+            content: '';
+            position: absolute;
+            background-color: var(--hud-fg, #1A1A1A);
+        }
+        .crosshair::before { top: -4px; bottom: -4px; left: 50%; width: 1px; transform: translateX(-50%); }
+        .crosshair::after { left: -4px; right: -4px; top: 50%; height: 1px; transform: translateY(-50%); }
+        
+        .corner-tl, .corner-tr, .corner-bl, .corner-br { position: absolute; width: 6px; height: 6px; border-color: #1A1A1A; border-style: solid; border-width: 0; }
+        .corner-tl { top: -1px; left: -1px; border-top-width: 1px; border-left-width: 1px; }
+        .corner-tr { top: -1px; right: -1px; border-top-width: 1px; border-right-width: 1px; }
+        .corner-bl { bottom: -1px; left: -1px; border-bottom-width: 1px; border-left-width: 1px; }
+        .corner-br { bottom: -1px; right: -1px; border-bottom-width: 1px; border-right-width: 1px; }
+
+        .dark .hud-bg { background-color: #0A0A0A; }
+        .dark .hud-border-fg { border-color: rgba(255,255,255,0.2) !important; color: #EBEBEB !important; }
+        .dark .bg-micro-grid { background-image: linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px); }
+    </style>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body 
+    class="font-sans text-hud-fg transition-all duration-700 relative min-h-screen uppercase tracking-wide text-xs selection:bg-black selection:text-white" 
+    :class="[
+        isGrayscale ? 'grayscale' : '', 
+        theme === 'dark' ? 'dark bg-[#0A0A0A] text-[#EBEBEB]' : 'bg-[#E5E5E5]'
+    ]" 
+    x-data="appState()" 
+    x-init="setTimeout(() => lucide.createIcons(), 50)"
+>
+    <!-- Micrographics Grid Overlay -->
+    <div class="fixed inset-0 z-[-1] pointer-events-none bg-micro-grid" style="background-size: 20px 20px;"></div>
+    <div class="fixed inset-0 z-[-1] pointer-events-none opacity-50" style="background-image: radial-gradient(#1a1a1a 0.5px, transparent 0.5px); background-size: 100px 100px;"></div>
+    
+    <!-- Navbar Component (Micrographics Style) -->
+    <nav class="h-14 flex items-center justify-between z-50 fixed top-0 left-0 w-full border-b border-hud-fg/30 bg-[#E5E5E5]/95 backdrop-blur-md shadow-[0_2px_10px_rgba(0,0,0,0.05)]" :class="theme === 'dark' ? 'bg-[#0A0A0A]/95 border-white/30 shadow-[0_2px_10px_rgba(255,255,255,0.02)]' : ''">
+        <!-- Thin top line -->
+        <div class="absolute left-0 top-0 w-full h-[2px] bg-hud-fg/10 dark:bg-white/10 flex">
+            <div class="w-1/3 h-full bg-hud-fg/40 dark:bg-white/40"></div>
+        </div>
+        
+        <div class="flex items-center h-full border-r border-hud-fg/30 px-3 md:px-6" :class="theme === 'dark' ? 'border-white/30' : ''">
+            <div class="relative flex items-center justify-center w-8 h-8 mr-3 border border-hud-fg/40 dark:border-white/40 rounded-sm">
+                <div class="corner-tl dark:border-white"></div><div class="corner-tr dark:border-white"></div>
+                <div class="corner-bl dark:border-white"></div><div class="corner-br dark:border-white"></div>
+                <img src="../../favicon.ico" alt="Favicon" class="w-4 h-4 object-contain filter dark:invert" onerror="this.style.display='none'">
+            </div>
+            <div class="flex flex-col">
+                <span class="font-mono font-bold tracking-widest text-[11px] leading-none mb-0.5">SITEDOTMOSS // LITE</span>
+                <span class="font-mono text-[8px] opacity-60 leading-none">CORE.STATUS: OPTIMAL</span>
+            </div>
+        </div>
+        
+        <div class="flex-1 flex justify-center h-full items-center px-4">
+            <div class="hidden md:flex space-x-12 text-[11px] tracking-widest font-mono">
+                <a href="../../index.html" class="group relative flex items-center gap-2 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                    <span class="opacity-0 group-hover:opacity-100 transition-opacity text-amber-600 dark:text-amber-400">></span>
+                    <span>DASHBOARD</span>
+                    <div class="absolute bottom-[-16px] left-0 w-full h-[2px] bg-transparent group-hover:bg-amber-600 dark:group-hover:bg-amber-400 transition-colors"></div>
+                </a>
+                <a href="#" class="group relative flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold">
+                    <span>></span>
+                    <span>ARCHIVE_LOG</span>
+                    <div class="absolute bottom-[-16px] left-0 w-full h-[2px] bg-amber-600 dark:bg-amber-400"></div>
+                </a>
+                <a href="../setting/setting.html" class="group relative flex items-center gap-2 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                    <span class="opacity-0 group-hover:opacity-100 transition-opacity text-amber-600 dark:text-amber-400">></span>
+                    <span>CONFIG</span>
+                    <div class="absolute bottom-[-16px] left-0 w-full h-[2px] bg-transparent group-hover:bg-amber-600 dark:group-hover:bg-amber-400 transition-colors"></div>
+                </a>
+            </div>
+        </div>
+        
+        <div class="flex items-center h-full border-l border-hud-fg/30 pl-3 md:pl-6 pr-4" :class="theme === 'dark' ? 'border-white/30' : ''">
+            <div class="flex flex-col items-end mr-4 hidden sm:flex">
+                <span class="font-mono text-[9px] opacity-70 leading-none mb-0.5">PORT: 025</span>
+                <span class="font-mono text-[7px] opacity-40 leading-none">RX/TX ACTIVE</span>
+            </div>
+            <a href="../setting/setting.html" class="relative group flex h-8 w-8 border border-hud-fg/30 items-center justify-center hover:border-hud-fg transition-all dark:border-white/30 dark:hover:border-white">
+                <div class="absolute inset-0 bg-hud-fg/5 scale-0 group-hover:scale-100 transition-transform dark:bg-white/10"></div>
+                <i data-lucide="settings" class="w-4 h-4 opacity-70 group-hover:opacity-100 group-hover:rotate-90 transition-all duration-500 relative z-10"></i>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Blog Content in Micrographics -->
+    <div x-data="blogData()" x-init="initBlog()" class="pt-16 pb-12 w-full min-h-screen max-w-[1200px] mx-auto px-4 md:px-8">
+        
+        <!-- Header Panel -->
+        <header class="mb-8 border border-hud-fg/20 p-4 relative bg-white/40 backdrop-blur-sm" :class="theme === 'dark' ? 'bg-black/40 border-white/20' : ''">
+            <div class="corner-tl dark:border-white"></div><div class="corner-tr dark:border-white"></div>
+            <div class="corner-bl dark:border-white"></div><div class="corner-br dark:border-white"></div>
+            
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <div class="font-mono text-[9px] opacity-50 mb-1 flex items-center gap-2">
+                        <span>MODULE B43</span>
+                        <span class="w-4 h-[1px] bg-hud-fg/30 dark:bg-white/30"></span>
+                        <span>ARCHIVE_LOG // 043.XML</span>
+                    </div>
+                    <h1 class="text-3xl font-mono tracking-tighter font-bold flex items-center gap-3">
+                        <span class="inline-block border border-hud-fg/40 p-1 rounded-sm"><i data-lucide="database" class="w-6 h-6"></i></span> 
+                        DATACLUSTER
+                    </h1>
+                </div>
+                
+                <div class="flex flex-col items-end gap-2">
+                    <div class="font-mono text-[9px] opacity-50 flex items-center gap-2">
+                        <span>OUTPUT: DIGITAL</span>
+                        <span>[INDEX] 00030741</span>
+                    </div>
+                    <div class="flex items-center gap-1 border border-hud-fg/20 p-1 dark:border-white/20" :class="theme === 'dark' ? 'bg-white/5' : 'bg-black/5'">
+                        <button @click="viewMode = 'grid'" class="p-1 transition-all" :class="viewMode === 'grid' ? 'bg-hud-fg text-white dark:bg-white dark:text-black' : 'opacity-40 hover:opacity-100'">
+                            <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <button @click="viewMode = 'list'" class="p-1 transition-all" :class="viewMode === 'list' ? 'bg-hud-fg text-white dark:bg-white dark:text-black' : 'opacity-40 hover:opacity-100'">
+                            <i data-lucide="list" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="w-full h-[1px] bg-hud-fg/20 my-4 dark:bg-white/20"></div>
+            
+            <!-- Controls / Filters -->
+            <div class="flex flex-col sm:flex-row gap-4">
+                <div class="relative flex-1 flex">
+                    <div class="border border-hud-fg/20 border-r-0 px-3 flex items-center justify-center dark:border-white/20" :class="theme === 'dark' ? 'bg-white/5' : 'bg-black/5'">
+                        <i data-lucide="search" class="w-3.5 h-3.5 opacity-50"></i>
+                    </div>
+                    <input type="text" x-model="searchQuery" placeholder="INPUT QUERY..." class="w-full bg-transparent border border-hud-fg/20 px-3 py-2 text-[11px] font-mono outline-none focus:border-hud-fg transition-colors dark:border-white/20 dark:focus:border-white dark:text-white dark:placeholder-white/30" :class="theme === 'dark' ? 'placeholder-white/30' : 'placeholder-hud-fg/30'">
+                </div>
+                
+                <div class="flex gap-2 overflow-x-auto no-scrollbar items-center">
+                    <span class="font-mono text-[9px] opacity-50 mr-2 flex-shrink-0">PARAMS ></span>
+                    <button x-show="selectedTag" @click="selectedTag = null" class="flex-shrink-0 flex items-center gap-1 px-2 py-1 text-[10px] font-mono border border-hud-fg border-dashed transition-all hover:bg-hud-fg/10 dark:border-white dark:hover:bg-white/10">
+                        [X] CLEAR
+                    </button>
+                    <template x-for="tag in allTags" :key="tag">
+                        <button @click="selectedTag = selectedTag === tag ? null : tag" class="flex-shrink-0 flex items-center gap-1 px-2 py-1 text-[10px] font-mono border transition-all" :class="selectedTag === tag ? 'bg-hud-fg text-white dark:bg-white dark:text-black border-hud-fg dark:border-white' : 'border-hud-fg/20 hover:border-hud-fg/60 dark:border-white/20 dark:hover:border-white/60'">
+                            <span x-text="tag"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </header>
+
+        <main class="relative z-10 w-full">
+            <div x-show="filteredPosts.length === 0" class="flex flex-col items-center justify-center py-32 opacity-40 font-mono text-[11px] border border-dashed border-hud-fg/30 dark:border-white/30 bg-white/20 dark:bg-black/20">
+                <div class="relative w-16 h-16 flex items-center justify-center mb-4">
+                    <div class="absolute inset-0 border border-hud-fg/50 rounded-full animate-ping dark:border-white/50" style="animation-duration: 3s"></div>
+                    <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+                </div>
+                <p class="tracking-widest">NULL_RESULT_EXCEPTION : NO DATA FOUND</p>
+                <div class="mt-6 flex gap-2">
+                    <span class="w-1.5 h-1.5 bg-amber-500 rounded-sm animate-pulse"></span>
+                    <span class="w-8 h-1.5 bg-hud-fg/20 dark:bg-white/20 rounded-sm"></span>
+                    <span class="w-4 h-1.5 bg-hud-fg/20 dark:bg-white/20 rounded-sm"></span>
+                </div>
+            </div>
+
+            <!-- Micrographics UI - Grid View -->
+            <div x-show="viewMode === 'grid' && filteredPosts.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative">
+                <!-- Background decor for grid -->
+                <div class="absolute inset-0 border-[0.5px] border-hud-fg/5 dark:border-white/5 pointer-events-none z-0 hidden lg:grid grid-cols-3">
+                    <div class="border-r border-hud-fg/5 dark:border-white/5"></div>
+                    <div class="border-r border-hud-fg/5 dark:border-white/5"></div>
+                    <div></div>
+                </div>
+
+                <template x-for="(post, index) in filteredPosts" :key="post.id">
+                    <article @click="openPost(post)" class="group cursor-pointer relative z-10 hover:z-20 transition-all duration-300 transform-gpu hover:scale-[1.02]">
+                        <div class="border border-hud-fg/30 bg-[#E5E5E5]/90 dark:bg-[#0A0A0A]/90 backdrop-blur-md relative transition-all duration-300 group-hover:border-hud-fg/80 dark:border-white/30 dark:group-hover:border-white/80 group-hover:shadow-[0_0_20px_rgba(0,0,0,0.05)] dark:group-hover:shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+                            
+                            <!-- Tactical Data Header -->
+                            <div class="flex justify-between items-center px-3 py-2 border-b border-hud-fg/20 dark:border-white/20 bg-hud-fg/5 dark:bg-white/5">
+                                <div class="font-mono text-[9px] opacity-70 flex items-center gap-2">
+                                    <span class="w-1 h-3 bg-hud-fg dark:bg-white group-hover:bg-amber-500 transition-colors"></span>
+                                    <span>SYS.<span x-text="post.id.substring(0,6) || 'N/A'"></span></span>
+                                </div>
+                                <div class="font-mono text-[9px] flex gap-1 items-center">
+                                    <span class="opacity-40">IDX</span>
+                                    <span class="opacity-80" x-text="String(index + 1).padStart(3, '0')"></span>
+                                </div>
+                            </div>
+
+                            <div class="corner-tl dark:border-white scale-0 group-hover:scale-100 transition-transform origin-top-left border-2"></div>
+                            <div class="corner-tr dark:border-white scale-0 group-hover:scale-100 transition-transform origin-top-right border-2"></div>
+                            <div class="corner-bl dark:border-white scale-0 group-hover:scale-100 transition-transform origin-bottom-left border-2"></div>
+                            <div class="corner-br dark:border-white scale-0 group-hover:scale-100 transition-transform origin-bottom-right border-2"></div>
+                            
+                            <!-- Image Frame -->
+                            <div class="relative aspect-video overflow-hidden border-b border-hud-fg/20 bg-hud-fg/5 dark:bg-white/5 dark:border-white/20 flex flex-col justify-center">
+                                <!-- Crosshairs overlay -->
+                                <div class="absolute inset-0 pointer-events-none z-10 opacity-30 mix-blend-difference">
+                                    <div class="absolute left-1/2 top-0 bottom-0 w-[0.5px] bg-hud-fg dark:bg-white border-dashed border-r"></div>
+                                    <div class="absolute top-1/2 left-0 right-0 h-[0.5px] bg-hud-fg dark:bg-white border-dashed border-b"></div>
+                                </div>
+
+                                <img x-show="post.coverImage" :src="post.coverImage" class="w-full h-full object-cover filter grayscale contrast-125 brightness-90 group-hover:grayscale-[50%] transition-all duration-700" alt="Cover">
+                                
+                                <div x-show="!post.coverImage" class="w-full h-full flex flex-col items-center justify-center font-mono opacity-40">
+                                    <i data-lucide="image-off" class="w-6 h-6 mb-2"></i>
+                                    <span class="text-[9px]">NO_VISUAL_DATA</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Datablock Footer -->
+                            <div class="p-4">
+                                <div class="flex justify-between items-center mb-3 text-[10px] font-mono">
+                                    <div class="flex items-center gap-2 opacity-60">
+                                        <i data-lucide="clock" class="w-3 h-3"></i>
+                                        <span x-text="new Date(post.createdAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' }).replace(/\//g, '.')"></span>
+                                    </div>
+                                    <div class="flex items-center gap-1 opacity-60 group-hover:opacity-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-all">
+                                        <i data-lucide="bar-chart-2" class="w-3 h-3"></i> 
+                                        <span x-text="String(post.likesCount || 0).padStart(4, '0')"></span>
+                                    </div>
+                                </div>
+                                
+                                <h3 class="text-xs font-mono font-bold leading-snug mb-3 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors h-8 line-clamp-2" x-text="post.title"></h3>
+                                                                
+                                <div class="flex flex-wrap gap-1.5 mt-2">
+                                    <template x-for="tag in post.tags.slice(0,3)">
+                                        <span class="text-[8px] font-mono border border-hud-fg/30 px-1.5 py-0.5 tracking-wider dark:border-white/30 bg-hud-fg/5 dark:bg-white/5 uppercase" x-text="tag"></span>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </template>
+            </div>
+
+            <!-- Micrographics UI - List View -->
+            <div x-show="viewMode === 'list' && filteredPosts.length > 0" class="flex flex-col gap-4 relative z-10 w-full max-w-[900px] mx-auto">
+                <template x-for="(post, index) in filteredPosts" :key="post.id">
+                    <article @click="openPost(post)" class="group cursor-pointer flex flex-col md:flex-row border border-hud-fg/30 hover:border-hud-fg/80 transition-all duration-300 dark:border-white/30 dark:hover:border-white/80 bg-[#E5E5E5]/90 dark:bg-[#0A0A0A]/90 backdrop-blur-md relative transform-gpu hover:-translate-y-0.5">
+                        
+                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-amber-600 dark:group-hover:bg-amber-400 transition-colors"></div>
+                        
+                        <!-- Timeline marker -->
+                        <div class="hidden md:flex flex-col items-center justify-center border-r border-hud-fg/20 dark:border-white/20 p-4 min-w-[70px] bg-hud-fg/5 dark:bg-white/5 relative overflow-hidden">
+                            <div class="absolute top-0 w-full h-[1px] bg-hud-fg/10 dark:bg-white/10"></div>
+                            <div class="absolute bottom-0 w-full h-[1px] bg-hud-fg/10 dark:bg-white/10"></div>
+                            <div class="font-mono text-[9px] opacity-50 mb-2">IDX</div>
+                            <div class="font-mono text-sm font-bold opacity-80" x-text="String(index + 1).padStart(3, '0')"></div>
+                        </div>
+
+                        <div class="flex-1 flex flex-col sm:flex-row p-4 gap-5">
+                            <div class="w-full sm:w-40 aspect-video sm:aspect-[4/3] flex-shrink-0 border border-hud-fg/30 dark:border-white/30 relative overflow-hidden bg-hud-fg/5 dark:bg-white/5">
+                                <img x-show="post.coverImage" :src="post.coverImage" class="w-full h-full object-cover filter grayscale contrast-125 brightness-90 group-hover:grayscale-[50%] transition-all duration-700" alt="Cover">
+                                <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40 mix-blend-overlay">
+                                    <div class="w-16 h-16 rounded-full border border-hud-fg border-dashed animate-spin-slow dark:border-white" style="animation-duration: 15s;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex-1 min-w-0 flex flex-col justify-between py-1">
+                                <div>
+                                    <div class="flex items-center gap-3 mb-2 font-mono text-[10px] opacity-60">
+                                        <div class="flex items-center gap-1.5 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                                            <i data-lucide="folder-code" class="w-3.5 h-3.5"></i>
+                                            <span x-text="'SYS.' + (post.id.substring(0,8) || 'UNKNOWN')"></span>
+                                        </div>
+                                        <span class="w-[3px] h-[3px] rounded-full bg-hud-fg/40 dark:bg-white/40"></span>
+                                        <span x-text="new Date(post.createdAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' }).replace(/\//g, '.')"></span>
+                                    </div>
+                                    <h3 class="text-sm font-mono font-bold leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors uppercase line-clamp-2" x-text="post.title"></h3>
+                                    <p class="text-[10px] font-mono opacity-60 line-clamp-2 mt-2 leading-relaxed tracking-wide" x-text="post.excerpt"></p>
+                                </div>
+                                <div class="flex items-center gap-4 mt-4 pt-3 border-t border-hud-fg/10 dark:border-white/10">
+                                    <div class="flex gap-2">
+                                        <template x-for="tag in post.tags.slice(0,4)">
+                                            <span class="text-[8px] font-mono opacity-80 uppercase tracking-widest flex items-center gap-1">
+                                                <span class="text-amber-600 dark:text-amber-400">#</span><span x-text="tag"></span>
+                                            </span>
+                                        </template>
+                                    </div>
+                                    <div class="ml-auto flex items-center gap-2 opacity-60 font-mono text-[10px] group-hover:opacity-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-all">
+                                        <span class="text-[8px]">LOG_SIZE:</span>
+                                        <span x-text="String(post.likesCount || 0).padStart(4, '0') + 'B'"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </template>
+            </div>
+            
+            <!-- Tech Diagram decorative element -->
+            <div class="mt-12 border-t border-hud-fg/20 dark:border-white/20 pt-4 flex justify-between items-center opacity-40">
+                <div class="flex gap-4 items-center">
+                    <div class="w-12 h-12 rounded-full border border-hud-fg dark:border-white relative flex items-center justify-center border-dashed animate-spin" style="animation-duration: 10s;">
+                        <div class="w-8 h-8 rounded-full border border-hud-fg dark:border-white"></div>
+                        <div class="w-4 h-4 rounded-full bg-hud-fg dark:bg-white absolute"></div>
+                    </div>
+                    <div class="hidden sm:block">
+                        <div class="h-px w-32 bg-hud-fg dark:bg-white mb-1"></div>
+                        <div class="h-px w-24 bg-hud-fg dark:bg-white mb-1"></div>
+                        <div class="h-px w-16 bg-hud-fg dark:bg-white"></div>
+                    </div>
+                </div>
+                <div class="font-mono text-[8px] text-right flex flex-col gap-1">
+                    <span>SYS_CORE // OPTIMIZED</span>
+                    <span>MEM::USAGE 42%</span>
+                    <span>ALL SYSTEMS NOMINAL</span>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Micrographics Detail Modal -->
+        <div x-show="selectedPost !== null" class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 backdrop-blur-md" :class="theme === 'dark' ? 'bg-[#0A0A0A]/90' : 'bg-[#E5E5E5]/90'" style="display:none;">
+            <!-- Modal Container -->
+            <div class="w-full max-w-4xl max-h-[90vh] flex flex-col border border-hud-fg/30 relative bg-[#E5E5E5] dark:bg-[#0A0A0A] shadow-2xl dark:border-white/30" @click.outside="selectedPost = null">
+                
+                <div class="corner-tl border-2 dark:border-white"></div><div class="corner-tr border-2 dark:border-white"></div>
+                <div class="corner-bl border-2 dark:border-white"></div><div class="corner-br border-2 dark:border-white"></div>
+                
+                <!-- Modal Top Bar -->
+                <div class="h-8 border-b border-hud-fg/20 dark:border-white/20 flex justify-between items-center px-3 bg-hud-fg/5 dark:bg-white/5 font-mono text-[9px] flex-shrink-0">
+                    <div class="flex items-center gap-2">
+                        <span class="animate-pulse w-2 h-2 bg-red-500 rounded-none"></span>
+                        <span>VIEWER_NODE :: ACTIVE</span>
+                    </div>
+                    <button @click="selectedPost = null" class="border border-hud-fg/30 px-2 py-0.5 hover:bg-hud-fg hover:text-white transition-colors dark:border-white/30 dark:hover:bg-white dark:hover:text-black">
+                        [ ESC ]
+                    </button>
+                </div>
+                
+                <div x-show="selectedPost" class="flex-1 overflow-y-auto no-scrollbar flex flex-col md:flex-row relative">
+                    <!-- Left Sidebar (Metadata) -->
+                    <div class="md:w-64 border-b md:border-b-0 md:border-r border-hud-fg/20 dark:border-white/20 p-4 md:p-6 flex flex-col gap-6 flex-shrink-0">
+                        <div class="relative aspect-square border border-hud-fg/20 dark:border-white/20 p-1 bg-black/5 dark:bg-white/5">
+                            <img x-show="selectedPost?.coverImage" :src="selectedPost?.coverImage" class="w-full h-full object-cover filter grayscale" alt="Cover">
+                            <!-- Overlay targeting reticle -->
+                            <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-50">
+                                <div class="w-16 h-16 rounded-full border border-hud-fg border-dashed animate-spin-slow dark:border-white" style="animation-duration: 8s;"></div>
+                                <div class="w-2 h-2 bg-hud-fg absolute dark:bg-white"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="font-mono text-[8px] opacity-50 mb-1 border-b border-hud-fg/20 pb-1 dark:border-white/20">FILE_REF</div>
+                            <div class="font-mono text-[10px] break-all" x-text="selectedPost?.id || '00000000000000'"></div>
+                        </div>
+                        
+                        <div>
+                            <div class="font-mono text-[8px] opacity-50 mb-1 border-b border-hud-fg/20 pb-1 dark:border-white/20">TIMESTAMP</div>
+                            <div class="font-mono text-[10px]" x-text="selectedPost ? new Date(selectedPost.createdAt).toISOString() : ''"></div>
+                        </div>
+                        
+                        <div>
+                            <div class="font-mono text-[8px] opacity-50 mb-2 border-b border-hud-fg/20 pb-1 dark:border-white/20">TAG_ARRAY</div>
+                            <div class="flex flex-col gap-1">
+                                <template x-for="tag in selectedPost?.tags">
+                                    <span class="text-[9px] font-mono border border-hud-fg/20 px-2 py-1 dark:border-white/20 flex justify-between">
+                                        <span x-text="tag"></span>
+                                        <span>+</span>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+                        
+                        <!-- Mini status diagram -->
+                        <div class="mt-auto hidden md:block pt-4">
+                            <div class="flex items-end gap-1 h-12 border-b border-l border-hud-fg/20 dark:border-white/20 p-1">
+                                <div class="w-full bg-hud-fg/20 dark:bg-white/20 h-[30%] hover:h-[40%] transition-all"></div>
+                                <div class="w-full bg-hud-fg/40 dark:bg-white/40 h-[70%] hover:h-[80%] transition-all"></div>
+                                <div class="w-full bg-hud-fg/60 dark:bg-white/60 h-[50%] hover:h-[60%] transition-all"></div>
+                                <div class="w-full bg-hud-fg/80 dark:bg-white/80 h-[90%] hover:h-[100%] transition-all"></div>
+                                <div class="w-full bg-hud-fg dark:bg-white h-[60%] hover:h-[70%] transition-all"></div>
+                            </div>
+                            <div class="font-mono text-[7px] text-center mt-1">DATA_MAP.V2</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Content Area -->
+                    <div class="flex-1 p-4 md:p-8 flex flex-col">
+                        <h2 class="text-2xl md:text-4xl font-mono font-bold uppercase tracking-tight mb-6 leading-none border-l-4 border-hud-fg pl-4 dark:border-white" x-text="selectedPost?.title"></h2>
+                        
+                        <div class="prose max-w-none prose-sm font-mono prose-headings:font-sans prose-headings:uppercase prose-p:lowercase prose-p:leading-relaxed prose-a:text-amber-600 dark:prose-invert dark:prose-a:text-amber-400 prose-img:border prose-img:border-hud-fg/20 prose-img:filter prose-img:grayscale hover:prose-img:grayscale-0 prose-img:transition-all" x-html="selectedPost?.content"></div>
+                        
+                        <div class="mt-auto pt-8 border-t border-hud-fg/20 dark:border-white/20 flex justify-between items-center font-mono text-[9px] opacity-50">
+                            <div><i data-lucide="terminal" class="w-3 h-3 inline"></i> EOF</div>
+                            <button @click="selectedPost = null" class="hover:text-hud-fg dark:hover:text-white transition-colors">[ CLOSE_FILE ]</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function appState() {
+            return {
+                theme: localStorage.getItem('siteMoss_theme') || 'light',
+                bgType: localStorage.getItem('siteMoss_bgType') || 'color',
+                bgValue: localStorage.getItem('siteMoss_bgValue') || '#EBEBEB',
+                isGrayscale: localStorage.getItem('siteMoss_isGrayscale') === 'true',
+                init() {
+                    window.addEventListener('storage', (e) => {
+                        if (e.key === 'siteMoss_theme') this.theme = e.newValue;
+                        if (e.key === 'siteMoss_isGrayscale') this.isGrayscale = e.newValue === 'true';
+                    });
+                }
+            }
+        }
+
+        function blogData() {
+            const samplePosts = [];
+
+            return {
+                posts: samplePosts,
+                searchQuery: '',
+                selectedTag: null,
+                
+                viewMode: 'grid',
+                selectedPost: null,
+                initBlog() {
+                    fetch('/api/blog/posts')
+                        .then(res => res.json())
+                        .then(data => {
+                            if(data && data.posts) {
+                                this.posts = data.posts;
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Error fetching posts:", err);
+                        });
+                    const savedMode = localStorage.getItem('site-ui-mode') || 'apple';
+                    this.uiMode = savedMode;
+                    
+                    window.addEventListener('site-ui-mode-change', (e) => {
+                        this.uiMode = e.detail.mode;
+                    });
+                    
+                    this.$watch('uiMode', value => {
+                        setTimeout(() => lucide.createIcons(), 50);
+                    });
+                    this.$watch('viewMode', () => {
+                        setTimeout(() => lucide.createIcons(), 50);
+                    });
+                    this.$watch('filteredPosts', () => {
+                        setTimeout(() => lucide.createIcons(), 50);
+                    });
+                    this.$watch('selectedPost', () => {
+                        setTimeout(() => lucide.createIcons(), 50);
+                    });
+                },
+                setMode(mode) {
+                    this.uiMode = mode;
+                    localStorage.setItem('site-ui-mode', mode);
+                    window.dispatchEvent(new CustomEvent('site-ui-mode-change', { detail: { mode } }));
+                },
+                get allTags() {
+                    const tags = new Set();
+                    this.posts.forEach(p => p.tags.forEach(t => tags.add(t)));
+                    return Array.from(tags).sort();
+                },
+                get filteredPosts() {
+                    let result = this.posts;
+                    if (this.searchQuery) {
+                        const q = this.searchQuery.toLowerCase();
+                        result = result.filter(p => p.title.toLowerCase().includes(q) || p.excerpt.toLowerCase().includes(q) || p.tags.some(t => t.toLowerCase().includes(q)));
+                    }
+                    if (this.selectedTag) {
+                        result = result.filter(p => p.tags.includes(this.selectedTag));
+                    }
+                    return result;
+                },
+                get featuredPost() {
+                    return this.filteredPosts.length > 0 ? this.filteredPosts[0] : null;
+                },
+                get spotlightPosts() {
+                    return this.filteredPosts.length > 1 ? this.filteredPosts.slice(1, 4) : [];
+                },
+                openPost(post) {
+                    if (this.uiMode === 'legacy') {
+                        this.selectedPost = post;
+                    } else {
+                        // For Apple UI, realistically it would go to a new page, but we'll show modal here too to simulate
+                        this.selectedPost = post;
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+
+
