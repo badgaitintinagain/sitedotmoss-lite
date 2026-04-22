@@ -1,5 +1,12 @@
 {
   "dependencies": {
     "@libsql/client": "^0.17.2"
+  },
+  "devDependencies": {
+    "wrangler": "^4.84.1"
+  },
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   }
 }
