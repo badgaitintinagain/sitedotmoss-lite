@@ -1,0 +1,11 @@
+﻿node_modules/
+old_code/
+functions/
+.git/
+package.json
+package-lock.json
+tailwind.config.js
+.wranglerignore
+.gitignore
+.assetsignore
+test.html
